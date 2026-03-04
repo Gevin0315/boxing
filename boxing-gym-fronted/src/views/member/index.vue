@@ -151,8 +151,10 @@ const handleDeductSubmit = async () => {
   }
 }
 
-const handleDialogClose = () => {
+const handleDialogClose = async () => {
   dialogVisible.value = false
+  // 延迟刷新列表，确保待处理的请求完成
+  await new Promise(resolve => setTimeout(resolve, 100))
   getList()
 }
 

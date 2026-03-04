@@ -57,6 +57,15 @@ public class SysUserController {
         if (user.getPassword() == null || user.getPassword().isBlank()) {
             return Result.validateFail("密码不能为空");
         }
+
+        // 检查用户名是否已存在
+        Long count = sysUserService.lambdaQuery()
+                .eq(SysUser::getUsername, user.getUsername())
+                .count();
+        if (count > 0) {
+            return Result.validateFail("用户名已存在");
+        }
+
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         boolean success = sysUserService.save(user);
         return success ? Result.success("新增成功") : Result.fail("新增失败");
@@ -74,6 +83,18 @@ public class SysUserController {
         SysUser existing = sysUserService.getById(user.getId());
         if (existing == null) {
             return Result.notFound("用户不存在");
+        }
+
+        // 如果要修改用户名，检查新用户名是否被其他用户占用
+        if (user.getUsername() != null && !user.getUsername().equals(existing.getUsername())) {
+            Long count = sysUserService.lambdaQuery()
+                    .eq(SysUser::getUsername, user.getUsername())
+                    .ne(SysUser::getId, user.getId())
+                    .count();
+            if (count > 0) {
+                return Result.validateFail("用户名已存在");
+            }
+            existing.setUsername(user.getUsername());
         }
 
         existing.setRealName(user.getRealName());

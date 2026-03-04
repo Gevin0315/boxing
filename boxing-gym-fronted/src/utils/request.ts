@@ -7,7 +7,8 @@ import axios, {
 } from 'axios'
 import { ElMessage } from 'element-plus'
 import { getToken, removeToken } from '@/types/auth'
-import type { ApiResponse, ErrorCode } from '@/types/api'
+import type { ApiResponse } from '@/types/api'
+import { ErrorCode } from '@/types/api'
 import router from '@/router'
 
 /**
@@ -153,7 +154,14 @@ service.interceptors.response.use(
         return Promise.reject(new Error(errorMsg))
       }
 
-      ElMessage.error(errorMsg)
+      // 根据错误内容选择合适的消息类型
+      if (errorMsg.includes('已存在') || errorMsg.includes('重复') || errorMsg.includes('冲突')) {
+        ElMessage.warning(errorMsg)
+      } else if (errorMsg.includes('不存在') || errorMsg.includes('未找到')) {
+        ElMessage.info(errorMsg)
+      } else {
+        ElMessage.error(errorMsg)
+      }
       return Promise.reject(new Error(errorMsg))
     }
 
@@ -165,6 +173,13 @@ service.interceptors.response.use(
     const cacheKey = error.config?.metadata?.cacheKey
     if (cacheKey && requestCache.has(cacheKey)) {
       requestCache.delete(cacheKey)
+    }
+
+    // 检测是否为请求被取消的情况
+    if (error.name === 'CanceledError' || error.name === 'AbortError' ||
+        error.message?.includes('canceled') || error.code === 'ERR_CANCELED') {
+      console.debug('请求已被取消:', error.message)
+      return Promise.reject(error)
     }
 
     console.error('Response error:', error)
@@ -189,9 +204,17 @@ service.interceptors.response.use(
     const status = error.response?.status
     let message = '请求失败'
 
+    // 尝试从响应数据中获取业务错误消息
+    const responseData = error.response?.data
+    if (responseData?.code !== undefined && responseData?.message) {
+      message = responseData.message
+    }
+
     switch (status) {
       case 400:
-        message = '请求参数错误'
+        if (!responseData?.code) {
+          message = '请求参数错误'
+        }
         break
       case 401:
         message = '未授权，请登录'
@@ -220,7 +243,14 @@ service.interceptors.response.use(
         message = error.message || '请求失败'
     }
 
-    ElMessage.error(message)
+    // 根据错误内容选择合适的消息类型
+    if (message.includes('已存在') || message.includes('重复') || message.includes('冲突')) {
+      ElMessage.warning(message)
+    } else if (message.includes('不存在') || message.includes('未找到')) {
+      ElMessage.info(message)
+    } else {
+      ElMessage.error(message)
+    }
     return Promise.reject(error)
   }
 )
