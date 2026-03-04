@@ -138,7 +138,7 @@ service.interceptors.response.use(
 
     // 判断响应状态码
     if (res.code !== 200) {
-      const errorMsg = res.msg || '请求失败'
+      const errorMsg = res.msg || res.message || '请求失败'
 
       // 根据不同错误码做不同处理
       if (res.code === ErrorCode.UNAUTHORIZED) {

@@ -1,8 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { getFinanceStats } from '@/api/finance-order'
+import { listMember } from '@/api/member'
+import { listTrainingRecord } from '@/api/training-record'
+import { listSchedule } from '@/api/course-schedule'
+import { listFinanceOrder } from '@/api/finance-order'
 import { formatCurrency, getDictLabel } from '@/utils/format'
-import { MEMBER_STATUS, COACH_STATUS, PAYMENT_STATUS } from '@/constants/dict'
+import { CHECKIN_STATUS, PAYMENT_STATUS } from '@/constants/dict'
 
 interface StatCard {
   title: string
@@ -29,23 +33,29 @@ onMounted(async () => {
 const loadData = async () => {
   loading.value = true
   try {
-    // 模拟数据，实际应从API获取
-    stats.value[0].value = 156
-    stats.value[1].value = 42
-    stats.value[2].value = 8
-    stats.value[3].value = formatCurrency(5680)
+    const [memberRes, trainingRes, scheduleRes, financeStats, financeRes] = await Promise.all([
+      listMember({ pageNum: 1, pageSize: 1 }),
+      listTrainingRecord({ pageNum: 1, pageSize: 9999 }),
+      listSchedule({ pageNum: 1, pageSize: 9999 }),
+      getFinanceStats({}),
+      listFinanceOrder({ pageNum: 1, pageSize: 5 })
+    ])
 
-    recentOrders.value = [
-      { id: 1, orderNo: 'ORD202401001', memberName: '张三', amount: 599, paymentStatus: '1', createTime: '2024-01-15 10:30:00' },
-      { id: 2, orderNo: 'ORD202401002', memberName: '李四', amount: 299, paymentStatus: '1', createTime: '2024-01-15 11:20:00' },
-      { id: 3, orderNo: 'ORD202401003', memberName: '王五', amount: 1999, paymentStatus: '0', createTime: '2024-01-15 14:15:00' }
-    ]
+    const today = new Date().toISOString().slice(0, 10)
+    const todayCheckInCount = (trainingRes.rows || []).filter((item: any) =>
+      (item.checkInTime || '').startsWith(today)
+    ).length
+    const todayScheduleCount = (scheduleRes.rows || []).filter((item: any) =>
+      item.scheduleDate === today
+    ).length
 
-    recentCheckIns.value = [
-      { id: 1, memberName: '张三', courseName: '拳击基础', checkInTime: '2024-01-15 09:00:00', status: '0' },
-      { id: 2, memberName: '李四', courseName: '泰拳入门', checkInTime: '2024-01-15 10:30:00', status: '0' },
-      { id: 3, memberName: '赵六', courseName: '体能训练', checkInTime: '2024-01-15 14:00:00', status: '1' }
-    ]
+    stats.value[0].value = memberRes.total || 0
+    stats.value[1].value = todayCheckInCount
+    stats.value[2].value = todayScheduleCount
+    stats.value[3].value = formatCurrency(financeStats?.totalIncome || 0)
+
+    recentOrders.value = (financeRes.rows || []).slice(0, 5)
+    recentCheckIns.value = (trainingRes.rows || []).slice(0, 5)
   } catch (error) {
     console.error('Failed to load dashboard data:', error)
   } finally {

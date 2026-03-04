@@ -3,7 +3,8 @@
  */
 export interface ApiResponse<T = any> {
   code: number
-  msg: string
+  msg?: string
+  message?: string
   data: T
 }
 

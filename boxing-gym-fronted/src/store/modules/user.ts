@@ -48,11 +48,19 @@ export const useUserStore = defineStore('user', {
     /** 获取用户信息 */
     async getUserInfo() {
       try {
-        const res = await getUserInfo() as UserInfo
-        this.userInfo = res
-        this.permissions = res.permissions || []
-        this.roles = res.roles || []
-        return res
+        const res = await getUserInfo() as any
+        const user: UserInfo = {
+          id: res.id,
+          username: res.username,
+          nickname: res.nickname || res.realName || res.username,
+          avatar: res.avatar || '',
+          roles: res.roles || (res.role ? [res.role] : []),
+          permissions: res.permissions || ['*:*:*']
+        }
+        this.userInfo = user
+        this.permissions = user.permissions || []
+        this.roles = user.roles || []
+        return user
       } catch (error) {
         throw error
       }
