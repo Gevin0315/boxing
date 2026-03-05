@@ -65,4 +65,14 @@ public class FinanceOrder implements Serializable {
      * 操作人ID
      */
     private Long createBy;
+
+    /**
+     * 已付金额
+     */
+    private BigDecimal paidAmount;
+
+    /**
+     * 支付状态: 0-未支付, 1-已支付, 2-部分支付
+     */
+    private Integer paymentStatus;
 }

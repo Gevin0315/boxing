@@ -49,4 +49,19 @@ public class SysUser extends BaseEntity {
      * 状态: 0-禁用, 1-启用
      */
     private Integer status;
+
+    /**
+     * 手机号
+     */
+    private String phone;
+
+    /**
+     * 邮箱
+     */
+    private String email;
+
+    /**
+     * 备注
+     */
+    private String remark;
 }

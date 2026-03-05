@@ -82,6 +82,7 @@ export function updateTrainingRecord(data: TrainingRecord) {
     memberId: data.memberId,
     coachId: data.coachId,
     checkinTime: data.checkInTime || null,
+    checkoutTime: data.checkOutTime || null,
     status: Number(data.status || 0),
     remark: data.remark || ''
   })

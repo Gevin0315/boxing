@@ -29,10 +29,11 @@ const mapSchedule = (item: any): CourseSchedule => ({
   scheduleDate: toIsoDate(item.startTime),
   startTime: toTime(item.startTime),
   endTime: toTime(item.endTime),
-  classroom: '',
+  classroom: item.classroom || '',
   maxCapacity: Number(item.maxPeople || 0),
   currentCount: Number(item.currentPeople || 0),
   status: toFrontendStatus(item.status),
+  remark: item.remark || '',
   createTime: item.createTime
 })
 
@@ -61,7 +62,9 @@ const toBackendPayload = (data: CourseSchedule) => ({
   endTime: `${data.scheduleDate} ${data.endTime}:00`,
   maxPeople: Number(data.maxCapacity || 0),
   currentPeople: Number(data.currentCount || 0),
-  status: toBackendStatus(data.status)
+  status: toBackendStatus(data.status),
+  classroom: data.classroom || '',
+  remark: data.remark || ''
 })
 
 /** 查询排课列表 */

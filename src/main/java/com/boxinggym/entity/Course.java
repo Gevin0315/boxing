@@ -7,6 +7,8 @@ import com.boxinggym.common.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.math.BigDecimal;
+
 /**
  * 课程定义实体
  */
@@ -62,4 +64,29 @@ public class Course extends BaseEntity {
      * 排序（越小越靠前）
      */
     private Integer sortOrder;
+
+    /**
+     * 课程分类: boxing, muay_thai, kickboxing, fitness, self_defense, kids
+     */
+    private String category;
+
+    /**
+     * 课程难度: beginner, intermediate, advanced
+     */
+    private String level;
+
+    /**
+     * 最大人数
+     */
+    private Integer maxCapacity;
+
+    /**
+     * 课程价格
+     */
+    private BigDecimal price;
+
+    /**
+     * 教练ID
+     */
+    private Long coachId;
 }

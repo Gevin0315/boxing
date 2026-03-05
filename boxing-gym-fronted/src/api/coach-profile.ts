@@ -1,21 +1,19 @@
 import request from '@/utils/request'
 import type { Coach, CoachQuery, CoachForm } from '@/types/coach'
 
-/** 状态转换：支持三种状态：'0'正常、'1'禁用、'2'锁定 */
+/** 状态转换：前端'0'在职/'1'休假/'2'离职，后端1启用/0禁用 */
 const toFrontendStatus = (status?: number | string): '0' | '1' | '2' => {
   const num = Number(status)
-  if (num === 0) return '0'
-  if (num === 1) return '1'
-  if (num === 2) return '2'
-  return '1' // 默认禁用
+  if (num === 1) return '0'  // 后端1启用 -> 前端'0'在职
+  if (num === 0) return '1'  // 后端0禁用 -> 前端'1'休假
+  return '2'               // 其他 -> 前端'2'离职
 }
 
 const toBackendStatus = (status?: string | number): number => {
   const str = String(status)
-  if (str === '0') return 0
-  if (str === '1') return 1
-  if (str === '2') return 2
-  return 1 // 默认禁用
+  if (str === '0') return 1  // 前端'0'在职 -> 后端1启用
+  if (str === '1') return 0  // 前端'1'休假 -> 后端0禁用
+  return 0                 // 前端'2'离职 -> 后端0禁用
 }
 
 const mapCoach = (item: any, userMap: Record<number, any>): Coach => {
@@ -24,13 +22,17 @@ const mapCoach = (item: any, userMap: Record<number, any>): Coach => {
     id: item.id,
     coachNo: `C${String(item.userId || item.id || 0).padStart(6, '0')}`,
     name: user.realName || '',
-    gender: '0',
-    phone: '',
+    gender: String(item.gender ?? 0) as '0' | '1',
+    phone: item.phone || user.phone || '',
     specialties: item.specialty || '',
-    level: '1',
+    level: String(item.level ?? 1) as '1' | '2' | '3' | '4',
     status: toFrontendStatus(user.status) as '0' | '1' | '2',
     imageUrl: item.imgUrl || '',
     description: item.intro || '',
+    email: item.email || user.email || '',
+    birthday: item.birthday || '',
+    address: item.address || '',
+    hireDate: item.hireDate || '',
     createTime: item.createTime,
     updateTime: item.updateTime
   }
@@ -84,7 +86,10 @@ export async function addCoach(data: CoachForm) {
     password: '123456',
     realName: data.name,
     role: 'ROLE_COACH',
-    status: toBackendStatus(data.status)
+    status: toBackendStatus(data.status),
+    phone: data.phone || '',
+    email: data.email || '',
+    remark: data.remark || ''
   })
 
   const users = await request.get<any[]>('/sys-user/list')
@@ -97,7 +102,15 @@ export async function addCoach(data: CoachForm) {
     userId: created.id,
     specialty: data.specialties,
     intro: data.description || '',
-    imgUrl: data.imageUrl || ''
+    imgUrl: data.imageUrl || '',
+    gender: Number(data.gender) || 0,
+    phone: data.phone || '',
+    email: data.email || '',
+    idCard: data.idCard || '',
+    birthday: data.birthday || '',
+    address: data.address || '',
+    level: Number(data.level) || 1,
+    hireDate: data.hireDate || ''
   })
 }
 
@@ -108,8 +121,14 @@ export async function updateCoach(data: CoachForm) {
     throw new Error('教练账号不存在')
   }
 
-  await request.put('/sys-user/status', null, {
-    params: { id: profile.userId, status: toBackendStatus(data.status) }
+  // 更新用户信息
+  await request.put('/sys-user', {
+    id: profile.userId,
+    realName: data.name,
+    status: toBackendStatus(data.status),
+    phone: data.phone || '',
+    email: data.email || '',
+    remark: data.remark || ''
   })
 
   return request.put('/coach-profile', {
@@ -117,7 +136,15 @@ export async function updateCoach(data: CoachForm) {
     userId: profile.userId,
     specialty: data.specialties,
     intro: data.description || '',
-    imgUrl: data.imageUrl || ''
+    imgUrl: data.imageUrl || '',
+    gender: Number(data.gender) || 0,
+    phone: data.phone || '',
+    email: data.email || '',
+    idCard: data.idCard || '',
+    birthday: data.birthday || '',
+    address: data.address || '',
+    level: Number(data.level) || 1,
+    hireDate: data.hireDate || ''
   })
 }
 

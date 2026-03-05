@@ -72,4 +72,40 @@ public class Member extends BaseEntity {
      * 状态: 0-禁用, 1-正常
      */
     private Integer status;
+
+    /**
+     * 生日
+     */
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate birthday;
+
+    /**
+     * 身份证号
+     */
+    private String idCard;
+
+    /**
+     * 地址
+     */
+    private String address;
+
+    /**
+     * 紧急联系人
+     */
+    private String emergencyContact;
+
+    /**
+     * 紧急联系电话
+     */
+    private String emergencyPhone;
+
+    /**
+     * 会员等级: 1-普通 2-银卡 3-金卡 4-钻石
+     */
+    private String membershipLevel;
+
+    /**
+     * 备注
+     */
+    private String remark;
 }

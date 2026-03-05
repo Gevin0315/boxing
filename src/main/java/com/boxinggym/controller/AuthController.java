@@ -62,10 +62,8 @@ public class AuthController {
 
         // 生成 Token
         String token = jwtUtil.generateToken(user.getId(), user.getUsername(), user.getRole());
-
         // 获取角色描述
         String roleDesc = RoleEnum.fromCode(user.getRole()).getDescription();
-
         // 构建响应
         LoginResponse response = LoginResponse.builder()
                 .token(token)
@@ -75,7 +73,6 @@ public class AuthController {
                 .role(user.getRole())
                 .roleDesc(roleDesc)
                 .build();
-
         return success("登录成功", response);
     }
 
@@ -98,7 +95,6 @@ public class AuthController {
         if (remainingTime > 0) {
             redisUtil.set(blacklistKey, "1", remainingTime / 1000);
         }
-
         return success("登出成功");
     }
 
@@ -110,11 +106,9 @@ public class AuthController {
     public Result<SysUser> getCurrentUser() {
         // 从 Security 上下文获取当前用户
         Object principal = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-
         if (principal == null || principal instanceof String) {
             return fail("未登录或认证失效");
         }
-
         UserDetailsImpl userDetails = (UserDetailsImpl) principal;
         return success("获取成功", userDetails.getUser());
     }

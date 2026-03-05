@@ -59,9 +59,9 @@ const mapFinance = (item: any): FinanceOrder => ({
   memberName: '',
   memberNo: '',
   amount: Number(item.amount || 0),
-  paidAmount: item.payMethod ? Number(item.amount || 0) : 0,
+  paidAmount: Number(item.paidAmount || item.amount || 0),
   paymentMethod: toFrontendPaymentMethod(item.payMethod),
-  paymentStatus: item.payMethod ? '1' : '0',
+  paymentStatus: item.paymentStatus ? String(item.paymentStatus) : (item.payMethod ? '1' : '0') as '0' | '1' | '2',
   remark: item.remark || '',
   createTime: item.createTime
 })
@@ -103,6 +103,8 @@ export function addFinanceOrder(data: FinanceOrderForm) {
     amount: data.amount,
     type: toBackendOrderType(data.orderType),
     payMethod: data.paymentStatus === '1' ? toBackendPayMethod(data.paymentMethod) : undefined,
+    paidAmount: data.paidAmount,
+    paymentStatus: data.paymentStatus === '1' ? 1 : (data.paymentStatus === '2' ? 2 : 0),
     remark: data.remark || ''
   })
 }

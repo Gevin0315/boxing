@@ -4,17 +4,15 @@ import type { Member, MemberQuery, MemberForm } from '@/types/member'
 /** 状态转换：支持三种状态：'0'正常、'1'禁用、'2'锁定 */
 const toFrontendStatus = (status?: number | string): '0' | '1' | '2' => {
   const num = Number(status)
-  if (num === 0) return '0'
-  if (num === 1) return '1'
-  if (num === 2) return '2'
+  if (num === 0) return '1'
+  if (num === 1) return '0'
   return '1' // 默认禁用
 }
 
 const toBackendStatus = (status?: string | number): number => {
   const str = String(status)
-  if (str === '0') return 0
-  if (str === '1') return 1
-  if (str === '2') return 2
+  if (str === '0') return 1
+  if (str === '1') return 0
   return 1 // 默认禁用
 }
 
@@ -22,12 +20,18 @@ const mapMember = (item: any): Member => ({
   id: item.id,
   memberNo: item.memberNo || '',
   name: item.name || '',
-  gender: String(item.gender ?? '0') as '0' | '1',
+  gender: String(item.gender ?? 0) as '0' | '1',
   phone: item.phone || '',
   status: toFrontendStatus(item.status),
-  membershipLevel: '1',
+  membershipLevel: item.membershipLevel || '1',
   expiryDate: item.cardExpireDate || '',
   remainingBalance: Number(item.balance || 0),
+  birthday: item.birthday || '',
+  idCard: item.idCard || '',
+  address: item.address || '',
+  emergencyContact: item.emergencyContact || '',
+  emergencyPhone: item.emergencyPhone || '',
+  remark: item.remark || '',
   createTime: item.createTime,
   updateTime: item.updateTime
 })
@@ -40,7 +44,14 @@ const toBackendMember = (data: MemberForm) => ({
   phone: data.phone,
   balance: data.remainingBalance ?? 0,
   cardExpireDate: data.expiryDate || null,
-  status: toBackendStatus(data.status)
+  status: toBackendStatus(data.status),
+  birthday: data.birthday || null,
+  idCard: data.idCard || null,
+  address: data.address || null,
+  emergencyContact: data.emergencyContact || null,
+  emergencyPhone: data.emergencyPhone || null,
+  membershipLevel: data.membershipLevel || '1',
+  remark: data.remark || null
 })
 
 /** 查询会员列表 */

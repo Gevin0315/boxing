@@ -35,6 +35,10 @@ public enum RoleEnum {
      * 根据角色代码获取枚举
      */
     public static RoleEnum fromCode(String code) {
+        if (code == null || code.isEmpty()) {
+            throw new IllegalArgumentException("角色不能为空");
+        }
+
         for (RoleEnum role : RoleEnum.values()) {
             if (role.getCode().equals(code)) {
                 return role;

@@ -24,6 +24,9 @@ const mapSysUser = (item: any): SysUser => ({
   nickname: item.realName || '',
   status: toFrontendStatus(item.status),
   role: item.role || '',
+  phone: item.phone || '',
+  email: item.email || '',
+  remark: item.remark || '',
   createTime: item.createTime,
   updateTime: item.updateTime
 })
@@ -68,7 +71,10 @@ export function addSysUser(data: SysUserForm) {
     password: data.password,
     realName: data.nickname,
     role: data.role,
-    status: toBackendStatus(data.status)
+    status: toBackendStatus(data.status),
+    phone: data.phone || '',
+    email: data.email || '',
+    remark: data.remark || ''
   })
 }
 
@@ -79,7 +85,10 @@ export function updateSysUser(data: SysUserForm) {
     password: data.password,
     realName: data.nickname,
     role: data.role,
-    status: toBackendStatus(data.status)
+    status: toBackendStatus(data.status),
+    phone: data.phone || '',
+    email: data.email || '',
+    remark: data.remark || ''
   })
 }
 

@@ -10,13 +10,13 @@ const mapCourse = (item: any): Course => ({
   id: item.id,
   courseName: item.name || '',
   courseType: toFrontendType(item.type),
-  category: '',
-  level: '',
-  maxCapacity: 20,
+  category: item.category || '',
+  level: item.level || '',
+  maxCapacity: item.maxCapacity || 20,
   duration: Number(item.duration || 60),
-  price: 0,
+  price: Number(item.price || 0),
   description: item.description || '',
-  coachId: undefined,
+  coachId: item.coachId,
   coachName: '',
   imageUrl: item.coverImg || '',
   status: toFrontendStatus(item.status) as '0' | '1',
@@ -33,7 +33,12 @@ const buildCoursePayload = (data: CourseForm) => ({
   type: toBackendType(data.courseType),
   duration: Number(data.duration || 60),
   status: toBackendStatus(data.status),
-  sortOrder: 0
+  sortOrder: 0,
+  category: data.category || '',
+  level: data.level || '',
+  maxCapacity: data.maxCapacity,
+  price: data.price,
+  coachId: data.coachId
 })
 
 /** 查询课程列表 */

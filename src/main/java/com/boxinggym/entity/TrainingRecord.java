@@ -61,4 +61,10 @@ public class TrainingRecord extends BaseEntity {
      * 备注
      */
     private String remark;
+
+    /**
+     * 签退时间
+     */
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime checkoutTime;
 }

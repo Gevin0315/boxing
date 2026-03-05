@@ -9,8 +9,8 @@ export const USER_STATUS = [
 
 /** 系统用户角色 */
 export const USER_ROLE = [
-  { value: '系统管理员', label: '系统管理员' },
-  { value: '前台操作员', label: '前台操作员' }
+  { value: 'ROLE_ADMIN', label: '系统管理员' },
+  { value: 'ROLE_RECEPTION', label: '前台操作员' }
 ]
 
 /** 性别 */
