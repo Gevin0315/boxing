@@ -25,8 +25,8 @@ const mapTraining = (item: any): TrainingRecord => ({
   scheduleId: item.scheduleId,
   memberId: item.memberId,
   coachId: item.coachId,
-  checkInTime: item.checkinTime || '',
-  checkOutTime: '',
+  checkInTime: item.checkinTime || item.checkInTime || '',
+  checkOutTime: item.checkoutTime || '',
   status: String(item.status ?? 0) as '0' | '1' | '2',
   remark: item.remark || '',
   createTime: item.createTime

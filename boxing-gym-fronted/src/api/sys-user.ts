@@ -1,8 +1,22 @@
 import request from '@/utils/request'
 import type { SysUser, SysUserQuery, SysUserForm } from '@/types/sys-user'
 
-const toFrontendStatus = (status?: number | string) => (Number(status) === 1 ? '0' : '1')
-const toBackendStatus = (status?: string | number) => (String(status) === '0' ? 1 : 0)
+/** 状态转换：支持三种状态：'0'正常、'1'禁用、'2'锁定 */
+const toFrontendStatus = (status?: number | string): '0' | '1' | '2' => {
+  const num = Number(status)
+  if (num === 0) return '0'
+  if (num === 1) return '1'
+  if (num === 2) return '2'
+  return '1' // 默认禁用
+}
+
+const toBackendStatus = (status?: string | number): number => {
+  const str = String(status)
+  if (str === '0') return 0
+  if (str === '1') return 1
+  if (str === '2') return 2
+  return 1 // 默认禁用
+}
 
 const mapSysUser = (item: any): SysUser => ({
   id: item.id,

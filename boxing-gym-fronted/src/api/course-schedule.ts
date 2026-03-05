@@ -32,14 +32,25 @@ const mapSchedule = (item: any): CourseSchedule => ({
   classroom: '',
   maxCapacity: Number(item.maxPeople || 0),
   currentCount: Number(item.currentPeople || 0),
-  status: String(item.status ?? 0) as '0' | '1' | '2',
+  status: toFrontendStatus(item.status),
   createTime: item.createTime
 })
 
-const toBackendStatus = (status?: string) => {
-  if (status === '1') return 3
-  if (status === '2') return 2
-  return 0
+/** 统一状态映射规则：'0'正常、'1'已取消、'2'已完成 */
+const toFrontendStatus = (status?: number | string): '0' | '1' | '2' => {
+  const num = Number(status)
+  if (num === 0) return '0'
+  if (num === 1) return '1'
+  if (num === 2) return '2'
+  return '0' // 默认正常
+}
+
+const toBackendStatus = (status?: string | number): number => {
+  const str = String(status)
+  if (str === '0') return 0
+  if (str === '1') return 1
+  if (str === '2') return 2
+  return 0 // 默认正常
 }
 
 const toBackendPayload = (data: CourseSchedule) => ({

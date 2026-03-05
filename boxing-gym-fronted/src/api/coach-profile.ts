@@ -1,8 +1,22 @@
 import request from '@/utils/request'
 import type { Coach, CoachQuery, CoachForm } from '@/types/coach'
 
-const toFrontendStatus = (status?: number | string) => (Number(status) === 1 ? '0' : '1')
-const toBackendStatus = (status?: string | number) => (String(status) === '0' ? 1 : 0)
+/** 状态转换：支持三种状态：'0'正常、'1'禁用、'2'锁定 */
+const toFrontendStatus = (status?: number | string): '0' | '1' | '2' => {
+  const num = Number(status)
+  if (num === 0) return '0'
+  if (num === 1) return '1'
+  if (num === 2) return '2'
+  return '1' // 默认禁用
+}
+
+const toBackendStatus = (status?: string | number): number => {
+  const str = String(status)
+  if (str === '0') return 0
+  if (str === '1') return 1
+  if (str === '2') return 2
+  return 1 // 默认禁用
+}
 
 const mapCoach = (item: any, userMap: Record<number, any>): Coach => {
   const user = userMap[item.userId] || {}
@@ -112,10 +126,14 @@ export function delCoach(ids: number[]) {
   return Promise.all(ids.map((id) => request.delete(`/coach-profile/${id}`)))
 }
 
-/** 修改教练状态 */
-export function updateCoachStatus(id: number, status: string) {
-  return request.put('/coach-profile/status', null, {
-    params: { id, status: toBackendStatus(status) }
+/** 修改教练状态 - 需要修改关联用户的状态 */
+export async function updateCoachStatus(id: number, status: string) {
+  // 先获取教练档案，找到关联的用户 ID
+  const profile = await request.get<any>(`/coach-profile/${id}`)
+
+  // 更新关联用户的状态
+  return request.put('/sys-user/status', null, {
+    params: { id: profile.userId, status: toBackendStatus(status) }
   })
 }
 

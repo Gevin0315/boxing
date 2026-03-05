@@ -7,6 +7,12 @@ export const USER_STATUS = [
   { value: '2', label: '锁定' }
 ]
 
+/** 系统用户角色 */
+export const USER_ROLE = [
+  { value: '系统管理员', label: '系统管理员' },
+  { value: '前台操作员', label: '前台操作员' }
+]
+
 /** 性别 */
 export const GENDER = [
   { value: '0', label: '男' },

@@ -1,8 +1,22 @@
 import request from '@/utils/request'
 import type { Member, MemberQuery, MemberForm } from '@/types/member'
 
-const toFrontendStatus = (status?: number | string) => (Number(status) === 1 ? '0' : '1')
-const toBackendStatus = (status?: string | number) => (String(status) === '0' ? 1 : 0)
+/** 状态转换：支持三种状态：'0'正常、'1'禁用、'2'锁定 */
+const toFrontendStatus = (status?: number | string): '0' | '1' | '2' => {
+  const num = Number(status)
+  if (num === 0) return '0'
+  if (num === 1) return '1'
+  if (num === 2) return '2'
+  return '1' // 默认禁用
+}
+
+const toBackendStatus = (status?: string | number): number => {
+  const str = String(status)
+  if (str === '0') return 0
+  if (str === '1') return 1
+  if (str === '2') return 2
+  return 1 // 默认禁用
+}
 
 const mapMember = (item: any): Member => ({
   id: item.id,
@@ -10,7 +24,7 @@ const mapMember = (item: any): Member => ({
   name: item.name || '',
   gender: String(item.gender ?? '0') as '0' | '1',
   phone: item.phone || '',
-  status: toFrontendStatus(item.status) as '0' | '1' | '2',
+  status: toFrontendStatus(item.status),
   membershipLevel: '1',
   expiryDate: item.cardExpireDate || '',
   remainingBalance: Number(item.balance || 0),

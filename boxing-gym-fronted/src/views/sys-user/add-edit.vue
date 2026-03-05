@@ -2,7 +2,7 @@
 import { ref, reactive, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { addSysUser, updateSysUser, getSysUser } from '@/api/sys-user'
-import { USER_STATUS } from '@/constants/dict'
+import { USER_STATUS, USER_ROLE } from '@/constants/dict'
 import { required, usernameRule, passwordRule, phoneRule, emailRule } from '@/utils/validate'
 import type { SysUserForm } from '@/types/sys-user'
 
@@ -162,7 +162,14 @@ const handleClose = () => {
         </el-radio-group>
       </el-form-item>
       <el-form-item label="角色" prop="role">
-        <el-input v-model="form.role" placeholder="请输入角色" />
+        <el-select v-model="form.role" placeholder="请选择角色" style="width: 100%">
+          <el-option
+            v-for="item in USER_ROLE"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value"
+          />
+        </el-select>
       </el-form-item>
       <el-form-item label="备注" prop="remark">
         <el-input v-model="form.remark" type="textarea" :rows="3" placeholder="请输入备注" />

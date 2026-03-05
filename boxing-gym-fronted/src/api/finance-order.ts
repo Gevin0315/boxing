@@ -1,24 +1,66 @@
 import request from '@/utils/request'
 import type { FinanceOrder, FinanceOrderQuery, FinanceOrderForm } from '@/types/finance'
 
-const toFrontendPaymentMethod = (method?: number | string) => {
-  const val = Number(method)
-  if (val >= 1 && val <= 4) return String(val - 1)
-  return '0'
+/** 支付方式映射表 */
+const PAYMENT_METHOD_MAP: Record<number, '0' | '1' | '2' | '3'> = {
+  1: '0',  // 微信
+  2: '1',  // 支付宝
+  3: '2',  // 现金
+  4: '3'   // 银行卡
 }
 
-const toBackendPayMethod = (method?: string | number) => Number(method ?? 0) + 1
+const REVERSE_PAYMENT_METHOD_MAP: Record<'0' | '1' | '2' | '3', number> = {
+  '0': 1,
+  '1': 2,
+  '2': 3,
+  '3': 4
+}
+
+const toFrontendPaymentMethod = (method?: number | string): '0' | '1' | '2' | '3' => {
+  const val = Number(method)
+  return PAYMENT_METHOD_MAP[val] || '0'
+}
+
+const toBackendPayMethod = (method?: string | number): number => {
+  const str = String(method)
+  return REVERSE_PAYMENT_METHOD_MAP[str as '0' | '1' | '2' | '3'] || 1
+}
+
+/** 订单类型映射表 */
+const ORDER_TYPE_MAP: Record<number, '0' | '1' | '2' | '3'> = {
+  1: '0',  // 会员卡
+  2: '1',  // 私教课
+  3: '2',  // 团课
+  4: '3'   // 商品
+}
+
+const REVERSE_ORDER_TYPE_MAP: Record<'0' | '1' | '2' | '3', number> = {
+  '0': 1,
+  '1': 2,
+  '2': 3,
+  '3': 4
+}
+
+const toFrontendOrderType = (type?: number | string): '0' | '1' | '2' | '3' => {
+  const val = Number(type)
+  return ORDER_TYPE_MAP[val] || '0'
+}
+
+const toBackendOrderType = (orderType?: string | number): number => {
+  const str = String(orderType)
+  return REVERSE_ORDER_TYPE_MAP[str as '0' | '1' | '2' | '3'] || 1
+}
 
 const mapFinance = (item: any): FinanceOrder => ({
   id: item.id,
   orderNo: item.orderNo || '',
-  orderType: String(Math.max(Number(item.type || 1) - 1, 0)) as '0' | '1' | '2' | '3',
+  orderType: toFrontendOrderType(item.type),
   memberId: item.memberId,
   memberName: '',
   memberNo: '',
   amount: Number(item.amount || 0),
   paidAmount: item.payMethod ? Number(item.amount || 0) : 0,
-  paymentMethod: toFrontendPaymentMethod(item.payMethod) as '0' | '1' | '2' | '3',
+  paymentMethod: toFrontendPaymentMethod(item.payMethod),
   paymentStatus: item.payMethod ? '1' : '0',
   remark: item.remark || '',
   createTime: item.createTime
@@ -59,7 +101,7 @@ export function addFinanceOrder(data: FinanceOrderForm) {
     orderNo: data.orderNo,
     memberId: data.memberId,
     amount: data.amount,
-    type: Math.max(Number(data.orderType || 0), 1),
+    type: toBackendOrderType(data.orderType),
     payMethod: data.paymentStatus === '1' ? toBackendPayMethod(data.paymentMethod) : undefined,
     remark: data.remark || ''
   })
