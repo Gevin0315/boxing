@@ -112,7 +112,7 @@ public class CourseController {
     @GetMapping("/options")
     public Result<java.util.List<java.util.Map<String, Object>>> getOptions() {
         java.util.List<java.util.Map<String, Object>> options = courseService.lambdaQuery()
-                .select(com.boxinggym.entity.Course::getId, com.boxinggym.entity.Course::getName)
+                .select(com.boxinggym.entity.Course::getId, com.boxinggym.entity.Course::getName, com.boxinggym.entity.Course::getType)
                 .eq(com.boxinggym.entity.Course::getStatus, 1)
                 .orderByAsc(com.boxinggym.entity.Course::getSortOrder)
                 .list()
@@ -121,6 +121,7 @@ public class CourseController {
                     java.util.Map<String, Object> map = new java.util.HashMap<>();
                     map.put("value", course.getId());
                     map.put("label", course.getName());
+                    map.put("type", course.getType());
                     return map;
                 })
                 .collect(java.util.stream.Collectors.toList());

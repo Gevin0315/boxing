@@ -14,7 +14,7 @@ import type { CourseSchedule } from '@/api/course-schedule'
 const loading = ref(false)
 const scheduleList = ref<CourseSchedule[]>([])
 const total = ref(0)
-const courseOptions = ref<Array<{ value: number; label: string }>>([])
+const courseOptions = ref<Array<{ value: number; label: string; type: number }>>([])
 const coachOptions = ref<Array<{ value: number; label: string }>>([])
 
 const queryParams = reactive({
@@ -58,7 +58,22 @@ const getList = async () => {
   loading.value = true
   try {
     const res = await listSchedule(queryParams)
-    scheduleList.value = res.rows || []
+    // 使用已加载的课程和教练选项来丰富数据
+    const courseMap = new Map(courseOptions.value.map(item => [item.value, { label: item.label, type: item.type }]))
+    const coachMap = new Map(coachOptions.value.map(item => [item.value, item.label]))
+
+    // 后端 type: 1-团课, 2-私教课 -> 前端: 'group', 'private'
+    const toFrontendType = (type?: number) => (type === 2 ? 'private' : 'group')
+
+    scheduleList.value = (res.rows || []).map(item => {
+      const course = courseMap.get(item.courseId)
+      return {
+        ...item,
+        courseName: course?.label || '',
+        courseType: toFrontendType(course?.type),
+        coachName: coachMap.get(item.coachId) || ''
+      }
+    })
     total.value = res.total || 0
   } catch (error) {
     console.error('Failed to get schedule list:', error)

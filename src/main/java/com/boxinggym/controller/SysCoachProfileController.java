@@ -157,7 +157,8 @@ public class SysCoachProfileController {
                 .map(p -> {
                     SysUser user = sysUserService.getById(p.getUserId());
                     Map<String, Object> map = new HashMap<>();
-                    map.put("value", p.getId());
+                    // value 使用 sys_coach_profile 表的 id
+                    map.put("value", p.getUserId());
                     map.put("label", user != null ? user.getRealName() : "");
                     return map;
                 })
