@@ -226,7 +226,6 @@ const handlePageChange = (page: number, pageSize: number) => {
       <el-table-column prop="memberNo" label="会员号" width="120" />
       <el-table-column prop="memberName" label="会员姓名" width="120" />
       <el-table-column prop="courseName" label="课程" width="150" show-overflow-tooltip />
-      <el-table-column prop="coachName" label="教练" width="100" />
       <el-table-column prop="amount" label="订单金额" width="120">
         <template #default="{ row }">
           {{ formatCurrency(row.amount) }}

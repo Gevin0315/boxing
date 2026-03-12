@@ -3,20 +3,16 @@ package com.boxinggym.controller;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.boxinggym.common.Result;
 import com.boxinggym.dto.FinanceOrderDTO;
-import com.boxinggym.entity.Course;
 import com.boxinggym.entity.FinanceOrder;
 import com.boxinggym.entity.Member;
-import com.boxinggym.entity.SysCoachProfile;
-import com.boxinggym.entity.SysUser;
-import com.boxinggym.service.CourseService;
 import com.boxinggym.service.FinanceOrderService;
 import com.boxinggym.service.MemberService;
-import com.boxinggym.service.SysUserService;
 import com.boxinggym.utils.ResponseAssembler;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -41,28 +37,6 @@ public class FinanceOrderController {
 
     private final FinanceOrderService financeOrderService;
     private final MemberService memberService;
-    private final SysUserService sysUserService;
-    private final CourseService courseService;
-
-    // 字典映射
-    private static final Map<Integer, String> ORDER_TYPE_LABEL = Map.of(
-            1, "会员卡",
-            2, "私教课",
-            3, "团课"
-    );
-    private static final Map<Integer, String> PAY_METHOD_LABEL = Map.of(
-            1, "微信",
-            2, "支付宝",
-            3, "现金",
-            4, "刷卡",
-            5, "系统扣减"
-    );
-    private static final Map<Integer, String> PAYMENT_STATUS_LABEL = Map.of(
-            0, "未支付",
-            1, "已支付",
-            2, "部分支付"
-    );
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     /**
      * 查询所有订单
@@ -79,46 +53,22 @@ public class FinanceOrderController {
                 .map(FinanceOrder::getMemberId)
                 .distinct()
                 .collect(Collectors.toList());
-        List<Long> coachIds = list.stream()
-                .map(FinanceOrder::getCoachId)
-                .distinct()
-                .collect(Collectors.toList());
-        List<Long> courseIds = list.stream()
-                .map(FinanceOrder::getCourseId)
-                .distinct()
-                .collect(Collectors.toList());
 
         // 批量查询关联数据
         Map<Long, Member> memberMap = new HashMap<>();
         if (!memberIds.isEmpty()) {
             List<Member> members = memberService.listByIds(memberIds);
-            memberMap = members.stream()
+            Map<Long, Member> tempMemberMap = members.stream()
                     .collect(Collectors.toMap(Member::getId, m -> m));
-        }
-
-        Map<Long, SysUser> coachMap = new HashMap<>();
-        if (!coachIds.isEmpty()) {
-            List<SysUser> coaches = sysUserService.lambdaQuery()
-                    .in(SysUser::getId, coachIds)
-                    .list();
-            coachMap = coaches.stream()
-                    .collect(Collectors.toMap(SysUser::getId, u -> u));
-        }
-
-        Map<Long, Course> courseMap = new HashMap<>();
-        if (!courseIds.isEmpty()) {
-            List<Course> courses = courseService.listByIds(courseIds);
-            courseMap = courses.stream()
-                    .collect(Collectors.toMap(Course::getId, c -> c));
+            memberMap.putAll(tempMemberMap);
         }
 
         // 组装 DTO 列表
         List<FinanceOrderDTO> dtoList = list.stream().map(order -> ResponseAssembler.toFinanceOrderDTO(
                 order,
                 memberMap.get(order.getMemberId()),
-                coachMap.get(order.getCoachId()),
-                courseMap.get(order.getCourseId()),
-                null, null, null, null
+                null,
+                null, null, null
         )).collect(Collectors.toList());
 
         return Result.success(dtoList);
@@ -136,11 +86,9 @@ public class FinanceOrderController {
         }
 
         Member member = order.getMemberId() != null ? memberService.getById(order.getMemberId()) : null;
-        SysUser coach = order.getCoachId() != null ? sysUserService.getById(order.getCoachId()) : null;
-        Course course = order.getCourseId() != null ? courseService.getById(order.getCourseId()) : null;
 
         FinanceOrderDTO dto = ResponseAssembler.toFinanceOrderDTO(
-                order, member, coach, course,
+                order, member, null,
                 null, null, null
         );
 
@@ -163,39 +111,11 @@ public class FinanceOrderController {
                 .orderByDesc(FinanceOrder::getCreateTime)
                 .list();
 
-        // 收集关联ID
-        List<Long> coachIds = list.stream()
-                .map(FinanceOrder::getCoachId)
-                .distinct()
-                .collect(Collectors.toList());
-        List<Long> courseIds = list.stream()
-                .map(FinanceOrder::getCourseId)
-                .distinct()
-                .collect(Collectors.toList());
-
-        // 批量查询关联数据
-        Map<Long, SysUser> coachMap = new HashMap<>();
-        if (!coachIds.isEmpty()) {
-            List<SysUser> coaches = sysUserService.lambdaQuery()
-                    .in(SysUser::getId, coachIds)
-                    .list();
-            coachMap = coaches.stream()
-                    .collect(Collectors.toMap(SysUser::getId, u -> u));
-        }
-
-        Map<Long, Course> courseMap = new HashMap<>();
-        if (!courseIds.isEmpty()) {
-            List<Course> courses = courseService.listByIds(courseIds);
-            courseMap = courses.stream()
-                    .collect(Collectors.toMap(Course::getId, c -> c)));
-        }
-
         // 组装 DTO 列表
         List<FinanceOrderDTO> dtoList = list.stream().map(order -> ResponseAssembler.toFinanceOrderDTO(
                 order,
                 member,
-                coachMap.get(order.getCoachId()),
-                courseMap.get(order.getCourseId()),
+                null,
                 null, null, null
         )).collect(Collectors.toList());
 

@@ -8,8 +8,6 @@ export interface FinanceOrder {
   memberId?: number
   memberName?: string
   memberNo?: string
-  coachId?: number
-  coachName?: string
   courseId?: number
   courseName?: string
   amount: number
@@ -39,7 +37,6 @@ export interface FinanceOrderForm {
   orderNo?: string
   orderType: '0' | '1' | '2' | '3'
   memberId: number
-  coachId?: number
   courseId?: number
   amount: number
   paidAmount: number

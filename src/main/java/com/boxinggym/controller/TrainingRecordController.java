@@ -2,8 +2,8 @@ package com.boxinggym.controller;
 
 import com.boxinggym.common.BusinessException;
 import com.boxinggym.common.Result;
-import com.boxinggym.dto.TrainingRecordDTO;
 import com.boxinggym.entity.Course;
+import com.boxinggym.utils.SecurityUtil;
 import com.boxinggym.entity.CourseSchedule;
 import com.boxinggym.entity.TrainingRecord;
 import com.boxinggym.service.CourseScheduleService;
@@ -65,66 +65,11 @@ public class TrainingRecordController {
      */
     @Operation(summary = "查询所有签到记录")
     @GetMapping("/list")
-    public Result<List<TrainingRecordDTO>> list() {
+    public Result<List<TrainingRecord>> list() {
         List<TrainingRecord> list = trainingRecordService.lambdaQuery()
                 .orderByDesc(TrainingRecord::getCreateTime)
                 .list();
-
-        // 收集所有关联ID
-        List<Long> memberIds = list.stream()
-                .map(TrainingRecord::getMemberId)
-                .distinct()
-                .collect(Collectors.toList());
-        List<Long> coachIds = list.stream()
-                .map(TrainingRecord::getCoachId)
-                .distinct()
-                .collect(Collectors.toList());
-        List<Long> scheduleIds = list.stream()
-                .map(TrainingRecord::getScheduleId)
-                .distinct()
-                .collect(Collectors.toList());
-        List<Long> courseIds = list.stream()
-                .map(TrainingRecord::getScheduleId)
-                .flatMap(record -> record.getCourseId() != null ? List.of(record.getCourseId()) : List.of())
-                .distinct()
-                .collect(Collectors.toList());
-
-        // 批量查询关联数据
-        Map<Long, Member> memberMap = new HashMap<>();
-        if (!memberIds.isEmpty()) {
-            List<Member> members = memberService.listByIds(memberIds);
-            memberMap = members.stream()
-                    .collect(Collectors.toMap(Member::getId, m -> m));
-        }
-
-        Map<Long, SysUser> coachMap = new HashMap<>();
-        if (!coachIds.isEmpty()) {
-            List<SysUser> coaches = sysUserService.lambdaQuery()
-                    .in(SysUser::getId, coachIds)
-                    .list();
-            coachMap = coaches.stream()
-                    .collect(Collectors.toMap(SysUser::getId, u -> u));
-        }
-
-        Map<Long, Course> courseMap = new HashMap<>();
-        if (!courseIds.isEmpty()) {
-            List<Course> courses = courseService.listByIds(courseIds);
-            courseMap = courses.stream()
-                    .collect(Collectors.toMap(Course::getId, c -> c));
-        }
-
-        // 组装 DTO 列表
-        List<TrainingRecordDTO> dtoList = list.stream().map(record -> ResponseAssembler.toTrainingRecordDTO(
-                record,
-                memberMap.get(record.getMemberId()),
-                coachMap.get(record.getCoachId()),
-                courseMap.get(courseMap.containsKey(record.getCourseId()) ? courseMap.get(record.getCourseId()) : null,
-                STATUS_LABEL,
-                COURSE_TYPE_LABEL,
-                COURSE_LEVEL_LABEL
-        )).collect(Collectors.toList());
-
-        return Result.success(dtoList);
+        return Result.success(list);
     }
 
     /**
@@ -132,25 +77,12 @@ public class TrainingRecordController {
      */
     @Operation(summary = "根据ID查询签到记录")
     @GetMapping("/{id}")
-    public Result<TrainingRecordDTO> getById(@PathVariable Long id) {
+    public Result<TrainingRecord> getById(@PathVariable Long id) {
         TrainingRecord record = trainingRecordService.getById(id);
         if (record == null) {
             return notFound("签到记录不存在");
         }
-
-        Member member = record.getMemberId() != null ? memberService.getById(record.getMemberId()) : null;
-        SysUser coach = record.getCoachId() != null ? sysUserService.getById(record.getCoachId()) : null;
-        Course course = record.getCourseId() != null ? courseService.getById(record.getCourseId()) : null;
-        CourseSchedule schedule = record.getScheduleId() != null ? courseScheduleService.getById(record.getScheduleId()) : null;
-
-        TrainingRecordDTO dto = ResponseAssembler.toTrainingRecordDTO(
-                record, member, coach, course, schedule,
-                STATUS_LABEL,
-                null,
-                null
-        );
-
-        return Result.success(dto);
+        return Result.success(record);
     }
 
     /**
@@ -158,68 +90,12 @@ public class TrainingRecordController {
      */
     @Operation(summary = "根据会员ID查询签到记录")
     @GetMapping("/member/{memberId}")
-    public Result<List<TrainingRecordDTO>> getByMemberId(@PathVariable Long memberId) {
-        Member member = memberService.getById(memberId);
-        if (member == null) {
-            return notFound("会员不存在");
-        }
-
+    public Result<List<TrainingRecord>> getByMemberId(@PathVariable Long memberId) {
         List<TrainingRecord> list = trainingRecordService.lambdaQuery()
                 .eq(TrainingRecord::getMemberId, memberId)
                 .orderByDesc(TrainingRecord::getCreateTime)
                 .list();
-
-        // 收集关联ID
-        List<Long> coachIds = list.stream()
-                .map(TrainingRecord::getCoachId)
-                .distinct()
-                .collect(Collectors.toList());
-        List<Long> scheduleIds = list.stream()
-                .map(TrainingRecord::getScheduleId)
-                .distinct()
-                .collect(Collectors.toList());
-        List<Long> courseIds = list.stream()
-                .map(TrainingRecord::getScheduleId)
-                .flatMap(record -> record.getCourseId() != null ? List.of(record.getCourseId()) : List.of())
-                .distinct()
-                .collect(Collectors.toList());
-
-        // 批量查询关联数据
-        Map<Long, Member> memberMap = new HashMap<>();
-        if (!memberIds.isEmpty()) {
-            List<Member> members = memberService.listByIds(memberIds);
-            memberMap = members.stream()
-                    .collect(Collectors.toMap(Member::getId, m -> m));
-        }
-
-        Map<Long, SysUser> coachMap = new HashMap<>();
-        if (!coachIds.isEmpty()) {
-            List<SysUser> coaches = sysUserService.lambdaQuery()
-                    .in(SysUser::getId, coachIds)
-                    .list();
-            coachMap = coaches.stream()
-                    .collect(Collectors.toMap(SysUser::getId, u -> u));
-        }
-
-        Map<Long, Course> courseMap = new HashMap<>();
-        if (!courseIds.isEmpty()) {
-            List<Course> courses = courseService.listByIds(courseIds);
-            courseMap = courses.stream()
-                    .collect(Collectors.toMap(Course::getId, c -> c)));
-        }
-
-        // 组装 DTO 列表
-        List<TrainingRecordDTO> dtoList = list.stream().map(record -> ResponseAssembler.toTrainingRecordDTO(
-                record,
-                memberMap.get(record.getMemberId()),
-                coachMap.get(record.getCoachId()),
-                courseMap.get(courseMap.containsKey(record.getCourseId()) ? courseMap.get(record.getCourseId()) : null),
-                STATUS_LABEL,
-                null,
-                null
-        )).collect(Collectors.toList());
-
-        return Result.success(dtoList);
+        return Result.success(list);
     }
 
     /**
@@ -227,67 +103,15 @@ public class TrainingRecordController {
      */
     @Operation(summary = "根据教练ID查询签到记录")
     @GetMapping("/coach/{coachId}")
-    public Result<List<TrainingRecordDTO>> getByCoachId(@PathVariable Long coachId) {
+    public Result<List<TrainingRecord>> getByCoachId(@PathVariable Long coachId) {
         if (SecurityUtil.isCoach() && !coachId.equals(SecurityUtil.getCurrentUserId())) {
             throw new BusinessException(403, "教练只能查询自己的签到记录");
         }
-
         List<TrainingRecord> list = trainingRecordService.lambdaQuery()
                 .eq(TrainingRecord::getCoachId, coachId)
                 .orderByDesc(TrainingRecord::getCreateTime)
                 .list();
-
-        // 收集关联ID
-        List<Long> memberIds = list.stream()
-                .map(TrainingRecord::getMemberId)
-                .distinct()
-                .collect(Collectors.toList());
-        List<Long> scheduleIds = list.stream()
-                .map(TrainingRecord::getScheduleId)
-                .distinct()
-                .collect(Collectors.toList());
-        List<Long> courseIds = list.stream()
-                .map(TrainingRecord::getScheduleId)
-                .flatMap(record -> record.getCourseId() != null ? List.of(record.getCourseId()) : List.of())
-                .distinct()
-                .collect(Collectors.toList());
-
-        // 批量查询关联数据
-        Map<Long, Member> memberMap = new HashMap<>();
-        if (!memberIds.isEmpty()) {
-            List<Member> members = memberService.listByIds(memberIds);
-            memberMap = members.stream()
-                    .collect(Collectors.toMap(Member::getId, m -> m));
-        }
-
-        Map<Long, SysUser> coachMap = new HashMap<>();
-        if (!coachIds.isEmpty()) {
-            List<SysUser> coaches = sysUserService.lambdaQuery()
-                    .in(SysUser::getId, coachIds)
-                    .list();
-            coachMap = coaches.stream()
-                    .collect(Collectors.toMap(SysUser::getId, u -> u));
-        }
-
-        Map<Long, Course> courseMap = new HashMap<>();
-        if (!courseIds.isEmpty()) {
-            List<Course> courses = courseService.listByIds(courseIds);
-            courseMap = courses.stream()
-                    .collect(Collectors.toMap(Course::getId, c -> c)));
-        }
-
-        // 组装 DTO 列表
-        List<TrainingRecordDTO> dtoList = list.stream().map(record -> ResponseAssembler.toTrainingRecordDTO(
-                record,
-                memberMap.get(record.getMemberId()),
-                coachMap.get(record.getCoachId()),
-                courseMap.get(courseMap.containsKey(record.getCourseId()) ? courseMap.get(record.getCourseId()) : null),
-                STATUS_LABEL,
-                null,
-                null
-        )).collect(Collectors.toList());
-
-        return Result.success(dtoList);
+        return Result.success(list);
     }
 
     /**
@@ -335,26 +159,23 @@ public class TrainingRecordController {
             return notFound("排课不存在");
         }
 
-        // 检查是否已签到
         long count = trainingRecordService.lambdaQuery()
                 .eq(TrainingRecord::getScheduleId, scheduleId)
                 .eq(TrainingRecord::getMemberId, memberId)
-                .ne(TrainingRecord::getStatus, 2) // 排除已取消的
+                .ne(TrainingRecord::getStatus, 2)
                 .count();
 
         if (count > 0) {
             return fail("该会员已签到或已预约此课程");
         }
 
-        // 创建签到记录
         TrainingRecord record = new TrainingRecord();
         record.setRecordNo("REC" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS")));
         record.setScheduleId(scheduleId);
         record.setMemberId(memberId);
         record.setCoachId(schedule.getCoachId());
         record.setCheckinTime(LocalDateTime.now());
-        record.setStatus(1); // 已签到
-
+        record.setStatus(1);
         boolean success = trainingRecordService.save(record);
         return success ? success("签到成功") : fail("签到失败");
     }
@@ -374,7 +195,6 @@ public class TrainingRecordController {
             return fail("当前状态无法签退");
         }
 
-        // 标记为已完成（这里用status=2表示已完成，实际可能需要根据业务调整）
         boolean success = trainingRecordService.lambdaUpdate()
                 .eq(TrainingRecord::getId, id)
                 .set(TrainingRecord::getStatus, 2)
@@ -388,7 +208,7 @@ public class TrainingRecordController {
      */
     @Operation(summary = "获取排课的签到记录")
     @GetMapping("/schedule/{scheduleId}")
-    public Result<List<TrainingRecordDTO>> getByScheduleId(@PathVariable Long scheduleId) {
+    public Result<List<TrainingRecord>> getByScheduleId(@PathVariable Long scheduleId) {
         CourseSchedule schedule = courseScheduleService.getById(scheduleId);
         if (schedule == null) {
             return notFound("排课不存在");
@@ -396,60 +216,10 @@ public class TrainingRecordController {
 
         List<TrainingRecord> list = trainingRecordService.lambdaQuery()
                 .eq(TrainingRecord::getScheduleId, scheduleId)
-                .ne(TrainingRecord::getStatus, 2) // 排除已取消的
+                .ne(TrainingRecord::getStatus, 2)
                 .orderByAsc(TrainingRecord::getCheckinTime)
                 .list();
 
-        // 收集关联信息
-        List<Long> memberIds = list.stream()
-                .map(TrainingRecord::getMemberId)
-                .distinct()
-                .collect(Collectors.toList());
-        List<Long> coachIds = list.stream()
-                .map(TrainingRecord::getCoachId)
-                .distinct()
-                .collect(Collectors.toList());
-        List<Long> courseIds = list.stream()
-                .map(TrainingRecord::getScheduleId)
-                .flatMap(record -> record.getCourseId() != null ? List.of(record.getCourseId()) : List.of())
-                .distinct()
-                .collect(Collectors.toList());
-
-        // 批量查询关联数据
-        Map<Long, Member> memberMap = new HashMap<>();
-        if (!memberIds.isEmpty()) {
-            List<Member> members = memberService.listByIds(memberIds);
-            memberMap = members.stream()
-                    .collect(Collectors.toMap(Member::getId, m -> m));
-        }
-
-        Map<Long, SysUser> coachMap = new HashMap<>();
-        if (!coachIds.isEmpty()) {
-            List<SysUser> coaches = sysUserService.lambdaQuery()
-                    .in(SysUser::getId, coachIds)
-                    .list();
-            coachMap = coaches.stream()
-                    .collect(Collectors.toMap(SysUser::getId, u -> u));
-        }
-
-        Map<Long, Course> courseMap = new HashMap<>();
-        if (!courseIds.isEmpty()) {
-            List<Course> courses = courseService.listByIds(courseIds);
-            courseMap = courses.stream()
-                    .collect(Collectors.toMap(Course::getId, c -> c)));
-        }
-
-        // 组装 DTO 列表
-        List<TrainingRecordDTO> dtoList = list.stream().map(record -> ResponseAssembler.toTrainingRecordDTO(
-                record,
-                memberMap.get(record.getMemberId()),
-                coachMap.get(record.getCoachId()),
-                courseMap.get(courseMap.containsKey(record.getCourseId()) ? courseMap.get(record.getCourseId()) : null),
-                STATUS_LABEL,
-                null,
-                null
-        )).collect(Collectors.toList());
-
-        return Result.success(dtoList);
+        return Result.success(list);
     }
 }

@@ -18,10 +18,10 @@ public class FinanceOrderDTO {
     private Long memberId;
     private String memberNo;      // 会员编号
     private String memberName;    // 会员姓名
-    private Long coachId;
-    private String coachName;    // 教练姓名
     private Long courseId;
     private String courseName;    // 课程名称
+    private String typeLabel; // 订单类型标签
+    private String courseType; // 课程类型标签
     private BigDecimal amount;
     private BigDecimal paidAmount;
     private Integer payMethod;

@@ -9,11 +9,13 @@ import com.boxinggym.entity.Member;
 import com.boxinggym.entity.SysCoachProfile;
 import com.boxinggym.entity.SysUser;
 import com.boxinggym.entity.TrainingRecord;
+import com.boxinggym.service.MemberService;
 
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 响应数据组装工具类
@@ -29,7 +31,6 @@ public class ResponseAssembler {
     public static FinanceOrderDTO toFinanceOrderDTO(
             FinanceOrder order,
             Member member,
-            SysUser coach,
             Course course,
             Map<Long, String> courseTypeMap,
             Map<Integer, String> payMethodMap,
@@ -50,12 +51,6 @@ public class ResponseAssembler {
             dto.setMemberId(member.getId());
             dto.setMemberNo(member.getMemberNo());
             dto.setMemberName(member.getName());
-        }
-
-        // 教练信息
-        if (coach != null) {
-            dto.setCoachId(coach.getId());
-            dto.setCoachName(coach.getRealName());
         }
 
         // 课程信息

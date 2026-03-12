@@ -39,7 +39,8 @@ public class MemberNoSequenceService extends ServiceImpl<MemberNoSequenceMapper,
         MemberNoSequence maxSeq = lambdaQuery()
                 .select(MemberNoSequence::getMemberNo)
                 .orderByDesc(MemberNoSequence::getMemberNo)
-                .last("member_no");
+                .last("LIMIT 1")
+                .one();
         String maxMemberNo = (maxSeq != null) ? maxSeq.getMemberNo() : null;
         long maxSeqNo = (maxMemberNo != null) ?
                 Long.parseLong(maxMemberNo.substring(1)) : 0L;

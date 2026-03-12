@@ -27,7 +27,6 @@ const form = reactive<FinanceOrderForm>({
   orderNo: '',
   orderType: '0',
   memberId: 0,
-  coachId: undefined,
   courseId: undefined,
   amount: 0,
   paidAmount: 0,
@@ -62,7 +61,6 @@ const resetForm = () => {
   form.orderNo = ''
   form.orderType = '0'
   form.memberId = 0
-  form.coachId = undefined
   form.courseId = undefined
   form.amount = 0
   form.paidAmount = 0
@@ -170,11 +168,7 @@ const handleClose = () => {
             <el-input-number v-model="form.memberId" :min="1" placeholder="请输入会员ID" style="width: 100%" />
           </el-form-item>
         </el-col>
-        <el-col :span="12">
-          <el-form-item label="教练ID">
-            <el-input-number v-model="form.coachId" :min="1" placeholder="请输入教练ID" style="width: 100%" />
-          </el-form-item>
-        </el-col>
+        <el-col :span="12" />
       </el-row>
       <el-form-item label="课程ID">
         <el-input-number v-model="form.courseId" :min="1" placeholder="请输入课程ID" style="width: 100%" />

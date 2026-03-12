@@ -36,10 +36,12 @@ public class CoachNoSequenceService extends ServiceImpl<CoachNoSequenceMapper, C
         }
 
         // 2. 没有可回收的号码，检查是否需要扩容
-        String maxCoachNo = lambdaQuery()
+        CoachNoSequence maxSeq = lambdaQuery()
                 .select(CoachNoSequence::getCoachNo)
                 .orderByDesc(CoachNoSequence::getCoachNo)
-                .last("coach_no");
+                .last("LIMIT 1")
+                .one();
+        String maxCoachNo = (maxSeq != null) ? maxSeq.getCoachNo() : null;
         long maxSeqNo = (maxCoachNo != null) ?
                 Long.parseLong(maxCoachNo.substring(1)) : 0L;
 
