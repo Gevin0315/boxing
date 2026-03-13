@@ -56,8 +56,9 @@ const mapFinance = (item: any): FinanceOrder => ({
   orderNo: item.orderNo || '',
   orderType: toFrontendOrderType(item.type),
   memberId: item.memberId,
-  memberName: '',
-  memberNo: '',
+  memberNo: item.memberNo || '',
+  memberName: item.memberName || '',
+  courseName: item.courseName || '',
   amount: Number(item.amount || 0),
   paidAmount: Number(item.paidAmount || item.amount || 0),
   paymentMethod: toFrontendPaymentMethod(item.payMethod),
@@ -76,6 +77,12 @@ export async function listFinanceOrder(query: FinanceOrderQuery) {
   }
   if (query.orderType) {
     rows = rows.filter((o) => o.orderType === query.orderType)
+  }
+  if (query.memberNo) {
+    rows = rows.filter((o) => o.memberNo.includes(query.memberNo!))
+  }
+  if (query.memberName) {
+    rows = rows.filter((o) => o.memberName.includes(query.memberName!))
   }
   if (query.paymentStatus) {
     rows = rows.filter((o) => o.paymentStatus === query.paymentStatus)

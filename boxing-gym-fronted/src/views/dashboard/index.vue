@@ -143,7 +143,7 @@ const loadData = async () => {
           <el-table :data="recentCheckIns" stripe>
             <el-table-column prop="memberName" label="会员" />
             <el-table-column prop="courseName" label="课程" />
-            <el-table-column prop="checkinTime" label="签到时间" width="160" />
+            <el-table-column prop="checkInTime" label="签到时间" width="160" />
             <el-table-column prop="status" label="状态">
               <template #default="{ row }">
                 <el-tag :type="row.status === 0 ? 'success' : 'info'">
