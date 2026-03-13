@@ -117,8 +117,3 @@ export function updateMemberStatus(id: number, status: string) {
     params: { id, status: toBackendStatus(status) }
   })
 }
-
-/** 生成会员号 */
-export function generateMemberNo() {
-  return request.get('/member/generate-no')
-}

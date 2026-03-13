@@ -2,7 +2,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search, Refresh, Edit, Delete, Picture } from '@element-plus/icons-vue'
-import { listCoach, delCoach, updateCoachStatus, generateCoachNo } from '@/api/coach-profile'
+import { listCoach, delCoach, updateCoachStatus } from '@/api/coach-profile'
 import { COACH_STATUS, COACH_LEVEL, GENDER } from '@/constants/dict'
 import { getDictLabel } from '@/utils/format'
 import Pagination from '@/components/common/Pagination.vue'
@@ -64,15 +64,10 @@ const handleReset = () => {
   getList()
 }
 
-const handleAdd = async () => {
-  try {
-    const res = await generateCoachNo()
-    dialogTitle.value = '新增教练'
-    coachId.value = undefined
-    dialogVisible.value = true
-  } catch (error) {
-    console.error('Failed to generate coach no:', error)
-  }
+const handleAdd = () => {
+  dialogTitle.value = '新增教练'
+  coachId.value = undefined
+  dialogVisible.value = true
 }
 
 const handleEdit = (row: Coach) => {

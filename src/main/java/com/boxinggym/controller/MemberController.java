@@ -1,13 +1,11 @@
 package com.boxinggym.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.boxinggym.common.Result;
 import com.boxinggym.entity.FinanceOrder;
 import com.boxinggym.entity.Member;
 import com.boxinggym.service.FinanceOrderService;
-import com.boxinggym.service.MemberNoSequenceService;
 import com.boxinggym.service.MemberService;
 import com.boxinggym.utils.SecurityUtil;
 import io.swagger.v3.oas.annotations.Operation;
@@ -33,7 +31,6 @@ public class MemberController {
 
     private final MemberService memberService;
     private final FinanceOrderService financeOrderService;
-    private final MemberNoSequenceService memberNoSequenceService;
 
     /**
      * 分页查询会员
@@ -89,13 +86,15 @@ public class MemberController {
     }
 
     /**
-     * 新增会员
+     * 新增会员（自动生成会员号）
      */
     @Operation(summary = "新增会员")
     @PostMapping
-    public Result<String> add(@RequestBody Member member) {
+    public Result<Member> add(@RequestBody Member member) {
+        // 自动生成会员号
+        member.setMemberNo(generateMemberNo());
         boolean success = memberService.save(member);
-        return success ? Result.success("新增成功") : Result.fail("新增失败");
+        return success ? Result.success(member) : Result.fail("新增失败");
     }
 
     /**
@@ -107,24 +106,17 @@ public class MemberController {
         boolean success = memberService.updateById(member);
         return success ? Result.success("修改成功") : Result.fail("修改失败");
     }
+
     /**
-     * 删除会员（同时回收会员号）
+     * 删除会员
      */
     @Operation(summary = "删除会员")
-    @Transactional
     @DeleteMapping("/{id}")
     public Result<String> delete(@PathVariable Long id) {
         Member member = memberService.getById(id);
         if (member == null) {
             return Result.notFound("会员不存在");
         }
-
-        // 先回收会员号
-        if (member.getMemberNo() != null) {
-            memberNoSequenceService.recycleMemberNo(member.getMemberNo(), id);
-        }
-
-        // 再删除会员
         boolean success = memberService.removeById(id);
         return success ? Result.success("删除成功") : Result.fail("删除失败");
     }
@@ -213,13 +205,23 @@ public class MemberController {
     }
 
     /**
-     * 生成会员号（使用序列服务，支持回收复用）
+     * 生成会员号（基于当前最大会员号+1）
      */
-    @Operation(summary = "生成会员号")
-    @GetMapping("/generate-no")
-    public Result<String> generateMemberNo() {
-        String memberNo = memberNoSequenceService.generateMemberNo();
-        return Result.success(memberNo);
+    private String generateMemberNo() {
+        Member maxMember = memberService.lambdaQuery()
+                .select(Member::getMemberNo)
+                .orderByDesc(Member::getMemberNo)
+                .last("LIMIT 1")
+                .one();
+
+        long nextNo = 1;
+        if (maxMember != null && maxMember.getMemberNo() != null) {
+            String maxNo = maxMember.getMemberNo();
+            if (maxNo.startsWith("M")) {
+                nextNo = Long.parseLong(maxNo.substring(1)) + 1;
+            }
+        }
+        return "M" + String.format("%06d", nextNo);
     }
 
     /**

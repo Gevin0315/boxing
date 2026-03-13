@@ -1,11 +1,9 @@
 package com.boxinggym.controller;
 
-import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.boxinggym.common.BusinessException;
 import com.boxinggym.common.Result;
 import com.boxinggym.entity.SysCoachProfile;
 import com.boxinggym.entity.SysUser;
-import com.boxinggym.service.CoachNoSequenceService;
 import com.boxinggym.service.SysCoachProfileService;
 import com.boxinggym.service.SysUserService;
 import com.boxinggym.utils.SecurityUtil;
@@ -13,7 +11,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -33,7 +30,6 @@ public class SysCoachProfileController {
 
     private final SysCoachProfileService sysCoachProfileService;
     private final SysUserService sysUserService;
-    private final CoachNoSequenceService coachNoSequenceService;
 
     /**
      * 查询所有教练信息
@@ -94,10 +90,9 @@ public class SysCoachProfileController {
     }
 
     /**
-     * 删除教练信息（同时回收教练号）
+     * 删除教练信息
      */
     @Operation(summary = "删除教练信息")
-    @Transactional
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_RECEPTION')")
     public Result<String> delete(@PathVariable Long id) {
@@ -105,15 +100,6 @@ public class SysCoachProfileController {
         if (profile == null) {
             return Result.notFound("教练不存在");
         }
-
-        // 先回收教练号
-        if (profile.getUserId() != null) {
-            // 从用户信息中获取用户ID，用于获取教练号
-            // 教练号格式为 C + 6位数字，数字部分就是用户ID
-            coachNoSequenceService.recycleCoachNo(String.format("C%06d", profile.getUserId()), profile.getUserId());
-        }
-
-        // 再删除教练档案
         boolean success = sysCoachProfileService.removeById(id);
         return success ? Result.success("删除成功") : Result.fail("删除失败");
     }
@@ -157,7 +143,6 @@ public class SysCoachProfileController {
                 .map(p -> {
                     SysUser user = sysUserService.getById(p.getUserId());
                     Map<String, Object> map = new HashMap<>();
-                    // value 使用 sys_coach_profile 表的 id
                     map.put("value", p.getUserId());
                     map.put("label", user != null ? user.getRealName() : "");
                     return map;
@@ -165,15 +150,5 @@ public class SysCoachProfileController {
                 .collect(Collectors.toList());
 
         return Result.success(options);
-    }
-
-    /**
-     * 生成教练号（使用序列服务，支持回收复用）
-     */
-    @Operation(summary = "生成教练号")
-    @GetMapping("/generate-no")
-    public Result<String> generateNo() {
-        String coachNo = coachNoSequenceService.generateCoachNo();
-        return Result.success(coachNo);
     }
 }

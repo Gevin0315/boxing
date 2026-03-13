@@ -198,34 +198,8 @@ CREATE TABLE `training_record` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='上课签到记录表';
 
 -- ============================================
--- 序列表
--- ============================================
-
--- member_no_sequence (会员编号序列表)
-CREATE TABLE `member_no_sequence` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
-    `current_value` BIGINT NOT NULL DEFAULT 0 COMMENT '当前序列值',
-    `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='会员编号序列表';
-
--- coach_no_sequence (教练编号序列表)
-CREATE TABLE `coach_no_sequence` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
-    `current_value` BIGINT NOT NULL DEFAULT 0 COMMENT '当前序列值',
-    `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='教练编号序列表';
-
--- ============================================
 -- 初始化数据
 -- ============================================
-
--- 初始化序列表
-INSERT INTO `member_no_sequence` (`current_value`) VALUES (0);
-INSERT INTO `coach_no_sequence` (`current_value`) VALUES (0);
 
 -- 初始化超级管理员用户 (密码: admin123，BCrypt加密后)
 -- 注意：实际生产环境请修改默认密码

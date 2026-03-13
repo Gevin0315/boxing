@@ -2,7 +2,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search, Refresh, Edit, Delete, Coin, Wallet } from '@element-plus/icons-vue'
-import { listMember, delMember, updateMemberStatus, memberRecharge, memberDeduct, generateMemberNo } from '@/api/member'
+import { listMember, delMember, updateMemberStatus, memberRecharge, memberDeduct } from '@/api/member'
 import { MEMBER_STATUS, MEMBERSHIP_LEVEL, GENDER } from '@/constants/dict'
 import { getDictLabel, formatCurrency } from '@/utils/format'
 import Pagination from '@/components/common/Pagination.vue'
@@ -67,15 +67,10 @@ const handleReset = () => {
   getList()
 }
 
-const handleAdd = async () => {
-  try {
-    const res = await generateMemberNo()
-    dialogTitle.value = '新增会员'
-    memberId.value = undefined
-    dialogVisible.value = true
-  } catch (error) {
-    console.error('Failed to generate member no:', error)
-  }
+const handleAdd = () => {
+  dialogTitle.value = '新增会员'
+  memberId.value = undefined
+  dialogVisible.value = true
 }
 
 const handleEdit = (row: Member) => {

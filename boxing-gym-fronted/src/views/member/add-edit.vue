@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, reactive, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import { addMember, updateMember, getMember, generateMemberNo } from '@/api/member'
+import { addMember, updateMember, getMember } from '@/api/member'
 import { MEMBER_STATUS, MEMBERSHIP_LEVEL, GENDER } from '@/constants/dict'
 import { required, phoneRule, idCardRule } from '@/utils/validate'
 import type { MemberForm } from '@/types/member'
@@ -20,7 +20,6 @@ const emit = defineEmits<{
 
 const formRef = ref()
 const loading = ref(false)
-const generating = ref(false)
 
 const form = reactive<MemberForm>({
   id: undefined,
@@ -41,7 +40,6 @@ const form = reactive<MemberForm>({
 })
 
 const rules = {
-  memberNo: [required('请输入会员号')],
   name: [required('请输入姓名')],
   gender: [required('请选择性别')],
   phone: [required('请输入手机号'), phoneRule],
@@ -56,8 +54,6 @@ watch(() => props.modelValue, async (val) => {
     resetForm()
     if (props.memberId) {
       await loadMemberDetail()
-    } else {
-      generateNo()
     }
   }
 })
@@ -79,18 +75,6 @@ const resetForm = () => {
   form.remainingBalance = 0
   form.remark = ''
   formRef.value?.clearValidate()
-}
-
-const generateNo = async () => {
-  generating.value = true
-  try {
-    const res = await generateMemberNo()
-    form.memberNo = res
-  } catch (error) {
-    console.error('Failed to generate member no:', error)
-  } finally {
-    generating.value = false
-  }
 }
 
 const loadMemberDetail = async () => {
@@ -115,8 +99,8 @@ const handleSubmit = async () => {
       await updateMember(form)
       ElMessage.success('修改成功')
     } else {
-      await addMember(form)
-      ElMessage.success('新增成功')
+      const res = await addMember(form)
+      ElMessage.success('新增成功，会员号: ' + (res.data?.memberNo || ''))
     }
 
     handleClose()
@@ -150,14 +134,11 @@ const handleClose = () => {
       label-width="100px"
       v-loading="loading"
     >
-      <el-row :gutter="20">
+      <!-- 新增时显示会员号（只读，由后端生成） -->
+      <el-row v-if="memberId" :gutter="20">
         <el-col :span="12">
-          <el-form-item label="会员号" prop="memberNo">
-            <el-input v-model="form.memberNo" placeholder="请输入会员号" :disabled="!!memberId">
-              <template #append>
-                <el-button :icon="Refresh" :loading="generating" @click="generateNo" :disabled="!!memberId" />
-              </template>
-            </el-input>
+          <el-form-item label="会员号">
+            <el-input v-model="form.memberNo" disabled />
           </el-form-item>
         </el-col>
         <el-col :span="12">
@@ -166,7 +147,27 @@ const handleClose = () => {
           </el-form-item>
         </el-col>
       </el-row>
-      <el-row :gutter="20">
+      <el-row v-else :gutter="20">
+        <el-col :span="12">
+          <el-form-item label="姓名" prop="name">
+            <el-input v-model="form.name" placeholder="请输入姓名" />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="性别" prop="gender">
+            <el-radio-group v-model="form.gender">
+              <el-radio
+                v-for="item in GENDER"
+                :key="item.value"
+                :label="item.value"
+              >
+                {{ item.label }}
+              </el-radio>
+            </el-radio-group>
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-row v-if="memberId" :gutter="20">
         <el-col :span="12">
           <el-form-item label="性别" prop="gender">
             <el-radio-group v-model="form.gender">
@@ -186,7 +187,25 @@ const handleClose = () => {
           </el-form-item>
         </el-col>
       </el-row>
-      <el-row :gutter="20">
+      <el-row v-else :gutter="20">
+        <el-col :span="12">
+          <el-form-item label="手机号" prop="phone">
+            <el-input v-model="form.phone" placeholder="请输入手机号" />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="生日">
+            <el-date-picker
+              v-model="form.birthday"
+              type="date"
+              placeholder="请选择生日"
+              value-format="YYYY-MM-DD"
+              style="width: 100%"
+            />
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-row v-if="memberId" :gutter="20">
         <el-col :span="12">
           <el-form-item label="生日">
             <el-date-picker
@@ -204,7 +223,19 @@ const handleClose = () => {
           </el-form-item>
         </el-col>
       </el-row>
-      <el-form-item label="地址">
+      <el-row v-else :gutter="20">
+        <el-col :span="12">
+          <el-form-item label="身份证号">
+            <el-input v-model="form.idCard" placeholder="请输入身份证号" />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="地址">
+            <el-input v-model="form.address" placeholder="请输入地址" />
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-form-item v-if="memberId" label="地址">
         <el-input v-model="form.address" placeholder="请输入地址" />
       </el-form-item>
       <el-row :gutter="20">
@@ -273,10 +304,3 @@ const handleClose = () => {
     </template>
   </el-dialog>
 </template>
-
-<script lang="ts">
-import { Refresh } from '@element-plus/icons-vue'
-export default {
-  components: { Refresh }
-}
-</script>

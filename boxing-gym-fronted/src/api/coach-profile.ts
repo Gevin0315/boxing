@@ -168,8 +168,3 @@ export async function updateCoachStatus(id: number, status: string) {
 export function getCoachOptions() {
   return request.get('/coach-profile/options')
 }
-
-/** 生成教练号 */
-export function generateCoachNo() {
-  return request.get('/coach-profile/generate-no')
-}

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, reactive, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import { addCoach, updateCoach, getCoach, generateCoachNo } from '@/api/coach-profile'
+import { addCoach, updateCoach, getCoach } from '@/api/coach-profile'
 import { COACH_STATUS, COACH_LEVEL, GENDER } from '@/constants/dict'
 import { required, phoneRule, idCardRule, emailRule } from '@/utils/validate'
 import type { CoachForm } from '@/types/coach'
@@ -20,7 +20,6 @@ const emit = defineEmits<{
 
 const formRef = ref()
 const loading = ref(false)
-const generating = ref(false)
 
 const form = reactive<CoachForm>({
   id: undefined,
@@ -41,7 +40,6 @@ const form = reactive<CoachForm>({
 })
 
 const rules = {
-  coachNo: [required('请输入教练号')],
   name: [required('请输入姓名')],
   gender: [required('请选择性别')],
   phone: [required('请输入手机号'), phoneRule],
@@ -57,8 +55,6 @@ watch(() => props.modelValue, async (val) => {
     resetForm()
     if (props.coachId) {
       await loadCoachDetail()
-    } else {
-      generateNo()
     }
   }
 })
@@ -80,18 +76,6 @@ const resetForm = () => {
   form.imageUrl = ''
   form.description = ''
   formRef.value?.clearValidate()
-}
-
-const generateNo = async () => {
-  generating.value = true
-  try {
-    const res = await generateCoachNo()
-    form.coachNo = res
-  } catch (error) {
-    console.error('Failed to generate coach no:', error)
-  } finally {
-    generating.value = false
-  }
 }
 
 const loadCoachDetail = async () => {
@@ -151,14 +135,11 @@ const handleClose = () => {
       label-width="100px"
       v-loading="loading"
     >
-      <el-row :gutter="20">
+      <!-- 编辑时显示教练号（只读） -->
+      <el-row v-if="coachId" :gutter="20">
         <el-col :span="12">
-          <el-form-item label="教练号" prop="coachNo">
-            <el-input v-model="form.coachNo" placeholder="请输入教练号" :disabled="!!coachId">
-              <template #append>
-                <el-button :icon="Refresh" :loading="generating" @click="generateNo" :disabled="!!coachId" />
-              </template>
-            </el-input>
+          <el-form-item label="教练号">
+            <el-input v-model="form.coachNo" disabled />
           </el-form-item>
         </el-col>
         <el-col :span="12">
@@ -167,7 +148,27 @@ const handleClose = () => {
           </el-form-item>
         </el-col>
       </el-row>
-      <el-row :gutter="20">
+      <el-row v-else :gutter="20">
+        <el-col :span="12">
+          <el-form-item label="姓名" prop="name">
+            <el-input v-model="form.name" placeholder="请输入姓名" />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="性别" prop="gender">
+            <el-radio-group v-model="form.gender">
+              <el-radio
+                v-for="item in GENDER"
+                :key="item.value"
+                :label="item.value"
+              >
+                {{ item.label }}
+              </el-radio>
+            </el-radio-group>
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-row v-if="coachId" :gutter="20">
         <el-col :span="12">
           <el-form-item label="性别" prop="gender">
             <el-radio-group v-model="form.gender">
@@ -187,7 +188,19 @@ const handleClose = () => {
           </el-form-item>
         </el-col>
       </el-row>
-      <el-row :gutter="20">
+      <el-row v-else :gutter="20">
+        <el-col :span="12">
+          <el-form-item label="手机号" prop="phone">
+            <el-input v-model="form.phone" placeholder="请输入手机号" />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="邮箱">
+            <el-input v-model="form.email" placeholder="请输入邮箱" />
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-row v-if="coachId" :gutter="20">
         <el-col :span="12">
           <el-form-item label="邮箱">
             <el-input v-model="form.email" placeholder="请输入邮箱" />
@@ -199,8 +212,26 @@ const handleClose = () => {
           </el-form-item>
         </el-col>
       </el-row>
-      <el-row :gutter="20">
+      <el-row v-else :gutter="20">
         <el-col :span="12">
+          <el-form-item label="身份证号">
+            <el-input v-model="form.idCard" placeholder="请输入身份证号" />
+          </el-form-item>
+        </el-col>
+        <el-col :span="12">
+          <el-form-item label="生日">
+            <el-date-picker
+              v-model="form.birthday"
+              type="date"
+              placeholder="请选择生日"
+              value-format="YYYY-MM-DD"
+              style="width: 100%"
+            />
+          </el-form-item>
+        </el-col>
+      </el-row>
+      <el-row :gutter="20">
+        <el-col v-if="coachId" :span="12">
           <el-form-item label="生日">
             <el-date-picker
               v-model="form.birthday"
@@ -269,10 +300,3 @@ const handleClose = () => {
     </template>
   </el-dialog>
 </template>
-
-<script lang="ts">
-import { Refresh } from '@element-plus/icons-vue'
-export default {
-  components: { Refresh }
-}
-</script>
