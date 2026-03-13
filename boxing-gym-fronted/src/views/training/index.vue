@@ -219,11 +219,11 @@ const handlePageChange = (page: number, pageSize: number) => {
         </template>
       </el-table-column>
       <el-table-column prop="classroom" label="教室" width="100" />
-      <el-table-column prop="checkInTime" label="签到时间" width="180" />
-      <el-table-column prop="checkOutTime" label="签退时间" width="180" />
+      <el-table-column prop="checkinTime" label="签到时间" width="180" />
+      <el-table-column prop="checkoutTime" label="签退时间" width="180" />
       <el-table-column prop="status" label="状态" width="80">
         <template #default="{ row }">
-          <el-tag :type="row.status === '0' ? 'success' : row.status === '1' ? 'danger' : 'warning'">
+          <el-tag :type="row.status === 0 ? 'success' : row.status === 1 ? 'primary' : 'warning'">
             {{ getDictLabel(CHECKIN_STATUS, row.status) }}
           </el-tag>
         </template>
@@ -232,7 +232,7 @@ const handlePageChange = (page: number, pageSize: number) => {
       <el-table-column label="操作" width="200" fixed="right">
         <template #default="{ row }">
           <el-button type="primary" link :icon="Edit" @click="handleEdit(row)">编辑</el-button>
-          <el-button v-if="row.status === '0' && !row.checkOutTime" type="warning" link @click="handleCheckOut(row)">签退</el-button>
+          <el-button v-if="row.status === 1 && !row.checkoutTime" type="warning" link @click="handleCheckOut(row)">签退</el-button>
           <el-button type="danger" link :icon="Delete" @click="handleDelete(row)">删除</el-button>
         </template>
       </el-table-column>

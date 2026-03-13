@@ -103,9 +103,10 @@ export const PAYMENT_STATUS = [
 
 /** 签到状态 */
 export const CHECKIN_STATUS = [
-  { value: '0', label: '已签到' },
-  { value: '1', label: '缺勤' },
-  { value: '2', label: '请假' }
+  { value: '0', label: '已预约' },
+  { value: '1', label: '已签到' },
+  { value: '2', label: '已取消' },
+  { value: '3', label: '旷课' }
 ]
 
 /** 排课状态 */

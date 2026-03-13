@@ -3,10 +3,12 @@ package com.boxinggym.controller;
 import com.boxinggym.common.BusinessException;
 import com.boxinggym.common.Result;
 import com.boxinggym.entity.Course;
+import com.boxinggym.entity.Member;
 import com.boxinggym.utils.SecurityUtil;
 import com.boxinggym.entity.CourseSchedule;
 import com.boxinggym.entity.TrainingRecord;
 import com.boxinggym.service.CourseScheduleService;
+import com.boxinggym.service.CourseService;
 import com.boxinggym.service.TrainingRecordService;
 import com.boxinggym.service.MemberService;
 import com.boxinggym.service.SysUserService;
@@ -39,6 +41,7 @@ public class TrainingRecordController {
 
     private final TrainingRecordService trainingRecordService;
     private final CourseScheduleService courseScheduleService;
+    private final CourseService courseService;
     private final MemberService memberService;
     private final SysUserService sysUserService;
 
@@ -69,6 +72,24 @@ public class TrainingRecordController {
         List<TrainingRecord> list = trainingRecordService.lambdaQuery()
                 .orderByDesc(TrainingRecord::getCreateTime)
                 .list();
+
+        // 填充会员名和课程名
+        list.forEach(record -> {
+            // 填充会员名
+            Member member = memberService.getById(record.getMemberId());
+            if (member != null) {
+                record.setMemberName(member.getName());
+            }
+            // 填充课程名
+            CourseSchedule schedule = courseScheduleService.getById(record.getScheduleId());
+            if (schedule != null) {
+                Course course = courseService.getById(schedule.getCourseId());
+                if (course != null) {
+                    record.setCourseName(course.getName());
+                }
+            }
+        });
+
         return Result.success(list);
     }
 

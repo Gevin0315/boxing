@@ -42,9 +42,11 @@ const loadData = async () => {
     ])
 
     const today = new Date().toISOString().slice(0, 10)
-    const todayCheckInCount = (trainingRes.rows || []).filter((item: any) =>
-      (item.checkInTime || '').startsWith(today)
-    ).length
+    const todayCheckInCount = (trainingRes.rows || []).filter((item: any) => {
+      if (!item.checkinTime) return false;
+      const checkinDate = item.checkinTime.slice(0, 10);
+      return checkinDate === today;
+    }).length
     const todayScheduleCount = (scheduleRes.rows || []).filter((item: any) =>
       item.scheduleDate === today
     ).length
@@ -124,7 +126,7 @@ const loadData = async () => {
             </el-table-column>
             <el-table-column prop="paymentStatus" label="支付状态">
               <template #default="{ row }">
-                <el-tag :type="row.paymentStatus === '1' ? 'success' : 'warning'">
+                <el-tag :type="row.paymentStatus === 1 ? 'success' : 'warning'">
                   {{ getDictLabel(PAYMENT_STATUS, row.paymentStatus) }}
                 </el-tag>
               </template>
@@ -141,10 +143,10 @@ const loadData = async () => {
           <el-table :data="recentCheckIns" stripe>
             <el-table-column prop="memberName" label="会员" />
             <el-table-column prop="courseName" label="课程" />
-            <el-table-column prop="checkInTime" label="签到时间" width="160" />
+            <el-table-column prop="checkinTime" label="签到时间" width="160" />
             <el-table-column prop="status" label="状态">
               <template #default="{ row }">
-                <el-tag :type="row.status === '0' ? 'success' : 'info'">
+                <el-tag :type="row.status === 0 ? 'success' : 'info'">
                   {{ getDictLabel(CHECKIN_STATUS, row.status) }}
                 </el-tag>
               </template>
