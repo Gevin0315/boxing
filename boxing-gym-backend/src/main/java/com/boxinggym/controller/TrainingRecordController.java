@@ -2,8 +2,12 @@ package com.boxinggym.controller;
 
 import com.boxinggym.common.BusinessException;
 import com.boxinggym.common.Result;
+import com.boxinggym.dto.CheckinWithCardDTO;
+import com.boxinggym.dto.MemberCardVO;
 import com.boxinggym.entity.Course;
 import com.boxinggym.entity.Member;
+import com.boxinggym.enums.CourseTypeEnum;
+import com.boxinggym.service.MemberCardService;
 import com.boxinggym.utils.SecurityUtil;
 import com.boxinggym.entity.CourseSchedule;
 import com.boxinggym.entity.TrainingRecord;
@@ -15,6 +19,7 @@ import com.boxinggym.service.SysUserService;
 import com.boxinggym.utils.ResponseAssembler;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,6 +49,7 @@ public class TrainingRecordController {
     private final CourseService courseService;
     private final MemberService memberService;
     private final SysUserService sysUserService;
+    private final MemberCardService memberCardService;
 
     // 字典映射
     private static final Map<Integer, String> STATUS_LABEL = Map.of(
@@ -199,6 +205,84 @@ public class TrainingRecordController {
         record.setStatus(1);
         boolean success = trainingRecordService.save(record);
         return success ? success("签到成功") : fail("签到失败");
+    }
+
+    /**
+     * 使用会员卡签到
+     */
+    @Operation(summary = "使用会员卡签到")
+    @Transactional(rollbackFor = Exception.class)
+    @PostMapping("/check-in-with-card")
+    public Result<Map<String, Object>> checkInWithCard(@Valid @RequestBody CheckinWithCardDTO dto) {
+        CourseSchedule schedule = courseScheduleService.getById(dto.getScheduleId());
+        if (schedule == null) {
+            throw new BusinessException("排课不存在");
+        }
+
+        // 检查是否已签到或预约
+        long count = trainingRecordService.lambdaQuery()
+                .eq(TrainingRecord::getScheduleId, dto.getScheduleId())
+                .eq(TrainingRecord::getMemberId, dto.getMemberId())
+                .ne(TrainingRecord::getStatus, 2)
+                .count();
+
+        if (count > 0) {
+            throw new BusinessException("该会员已签到或已预约此课程");
+        }
+
+        // 获取课程信息，判断是否为私教课
+        Course course = courseService.getById(schedule.getCourseId());
+        boolean isPrivateClass = course != null && CourseTypeEnum.PRIVATE.getCode().equals(course.getType());
+
+        Long memberCardId = dto.getMemberCardId();
+
+        // 如果未指定卡片，自动选择最佳卡片
+        if (memberCardId == null) {
+            if (isPrivateClass) {
+                List<MemberCardVO> privateCards = memberCardService.getAvailablePrivateCards(dto.getMemberId());
+                if (privateCards.isEmpty()) {
+                    throw new BusinessException("没有可用的私教卡");
+                }
+                memberCardId = privateCards.get(0).getId();
+            } else {
+                memberCardId = memberCardService.selectBestGroupCard(dto.getMemberId());
+                if (memberCardId == null) {
+                    throw new BusinessException("没有可用的团课卡");
+                }
+            }
+        } else {
+            // 验证卡片是否可用
+            if (!memberCardService.validateCardForCheckin(memberCardId, dto.getMemberId(), isPrivateClass)) {
+                throw new BusinessException("该会员卡不可用于此次签到");
+            }
+        }
+
+        // 创建签到记录
+        TrainingRecord record = new TrainingRecord();
+        record.setRecordNo("REC" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS")));
+        record.setScheduleId(dto.getScheduleId());
+        record.setMemberId(dto.getMemberId());
+        record.setCoachId(schedule.getCoachId());
+        record.setCheckinTime(LocalDateTime.now());
+        record.setStatus(1);
+        record.setMemberCardId(memberCardId);
+        record.setRemark(dto.getRemark());
+        trainingRecordService.save(record);
+
+        // 扣减卡片次数
+        memberCardService.deductSession(memberCardId, dto.getScheduleId(), record.getId());
+
+        // 更新卡片类型信息
+        MemberCardVO cardVO = memberCardService.getDetail(memberCardId);
+        record.setCardTypeUsed(cardVO.getCardType());
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("recordId", record.getId());
+        result.put("cardNo", cardVO.getCardNo());
+        result.put("cardType", cardVO.getCardTypeDesc());
+        result.put("remainingSessions", cardVO.getRemainingSessions());
+
+        return Result.success(result);
     }
 
     /**

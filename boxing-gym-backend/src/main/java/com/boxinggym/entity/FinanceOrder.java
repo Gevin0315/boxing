@@ -80,4 +80,14 @@ public class FinanceOrder implements Serializable {
      * 支付状态: 0-未支付, 1-已支付, 2-部分支付
      */
     private Integer paymentStatus;
+
+    /**
+     * 关联会员卡ID
+     */
+    private Long memberCardId;
+
+    /**
+     * 订单分类: 1-储值充值, 2-购卡, 3-课程消费
+     */
+    private Integer orderCategory;
 }

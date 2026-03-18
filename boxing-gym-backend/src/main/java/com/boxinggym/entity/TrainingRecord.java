@@ -80,4 +80,14 @@ public class TrainingRecord extends BaseEntity {
      */
     @TableField(exist = false)
     private String courseName;
+
+    /**
+     * 使用的会员卡ID
+     */
+    private Long memberCardId;
+
+    /**
+     * 使用的卡类型
+     */
+    private String cardTypeUsed;
 }
