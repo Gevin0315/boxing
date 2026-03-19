@@ -195,7 +195,7 @@ const loadMemberCards = async (memberId: number) => {
   cardsLoadingMap.value.set(memberId, true)
   try {
     const res = await getMemberCards(memberId)
-    memberCardsMap.value.set(memberId, res.data || [])
+    memberCardsMap.value.set(memberId, res || [])
   } catch (error) {
     console.error('Failed to load member cards:', error)
     memberCardsMap.value.set(memberId, [])
@@ -259,7 +259,7 @@ const handleViewRecords = async (card: MemberCard) => {
   usageLoading.value = true
   try {
     const res = await getCardUsageRecords(card.id)
-    usageRecords.value = res.data || []
+    usageRecords.value = res || []
   } catch (error) {
     console.error('Failed to load usage records:', error)
     usageRecords.value = []
