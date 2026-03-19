@@ -70,6 +70,13 @@ public interface MembershipCardService {
     void updateStatus(Long id, Integer status);
 
     /**
+     * 删除卡片
+     *
+     * @param id 卡片ID
+     */
+    void deleteById(Long id);
+
+    /**
      * 根据ID获取卡片实体
      *
      * @param id 卡片ID

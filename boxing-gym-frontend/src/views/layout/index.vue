@@ -14,6 +14,7 @@ const menuList = [
   { path: '/dashboard', title: '仪表盘', icon: 'Odometer' },
   { path: '/sys-user', title: '系统用户', icon: 'User' },
   { path: '/member', title: '会员管理', icon: 'UserFilled' },
+  { path: '/membership-card', title: '会员卡管理', icon: 'Postcard' },
   { path: '/course', title: '课程管理', icon: 'Reading' },
   { path: '/schedule', title: '排课管理', icon: 'Calendar' },
   { path: '/coach', title: '教练管理', icon: 'Avatar' },

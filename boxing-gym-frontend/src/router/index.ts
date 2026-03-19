@@ -115,6 +115,19 @@ const routes: RouteRecordRaw[] = [
     ]
   },
   {
+    path: '/membership-card',
+    component: () => import('@/views/layout/index.vue'),
+    meta: { requiresAuth: true },
+    children: [
+      {
+        path: '',
+        name: 'MembershipCard',
+        component: () => import('@/views/membership-card/index.vue'),
+        meta: { title: '会员卡管理', icon: 'Postcard' }
+      }
+    ]
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: () => import('@/views/error/404.vue'),

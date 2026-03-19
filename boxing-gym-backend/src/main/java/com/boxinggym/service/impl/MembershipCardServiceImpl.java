@@ -8,6 +8,7 @@ import com.boxinggym.dto.MembershipCardDTO;
 import com.boxinggym.dto.MembershipCardVO;
 import com.boxinggym.entity.MembershipCard;
 import com.boxinggym.enums.CardCategoryEnum;
+import com.boxinggym.enums.CardSaleStatusEnum;
 import com.boxinggym.enums.CardTypeEnum;
 import com.boxinggym.mapper.MembershipCardMapper;
 import com.boxinggym.service.MembershipCardService;
@@ -32,7 +33,7 @@ public class MembershipCardServiceImpl extends ServiceImpl<MembershipCardMapper,
     @Override
     public List<MembershipCardVO> listAvailableCards() {
         LambdaQueryWrapper<MembershipCard> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(MembershipCard::getStatus, 1)
+        wrapper.eq(MembershipCard::getStatus, CardSaleStatusEnum.ON_SHELF.getCode())
                 .orderByAsc(MembershipCard::getSortOrder)
                 .orderByAsc(MembershipCard::getPrice);
         List<MembershipCard> cards = list(wrapper);
@@ -41,9 +42,12 @@ public class MembershipCardServiceImpl extends ServiceImpl<MembershipCardMapper,
 
     @Override
     public List<MembershipCardVO> listByCategory(Integer category) {
+        // 验证分类值
+        CardCategoryEnum.fromCode(category);
+
         LambdaQueryWrapper<MembershipCard> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(MembershipCard::getCardCategory, category)
-                .eq(MembershipCard::getStatus, 1)
+                .eq(MembershipCard::getStatus, CardSaleStatusEnum.ON_SHELF.getCode())
                 .orderByAsc(MembershipCard::getSortOrder)
                 .orderByAsc(MembershipCard::getPrice);
         List<MembershipCard> cards = list(wrapper);
@@ -87,7 +91,7 @@ public class MembershipCardServiceImpl extends ServiceImpl<MembershipCardMapper,
         card.setCreateTime(LocalDateTime.now());
         card.setUpdateTime(LocalDateTime.now());
         if (card.getStatus() == null) {
-            card.setStatus(1);
+            card.setStatus(CardSaleStatusEnum.ON_SHELF.getCode());
         }
         if (card.getActivationDeadlineDays() == null) {
             card.setActivationDeadlineDays(30);
@@ -128,6 +132,16 @@ public class MembershipCardServiceImpl extends ServiceImpl<MembershipCardMapper,
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteById(Long id) {
+        MembershipCard card = getById(id);
+        if (card == null) {
+            throw new BusinessException("卡片不存在");
+        }
+        removeById(id);
+    }
+
+    @Override
     public MembershipCard getById(Long id) {
         return super.getById(id);
     }
@@ -140,7 +154,10 @@ public class MembershipCardServiceImpl extends ServiceImpl<MembershipCardMapper,
     }
 
     /**
-     * 转换为VO
+     * 将会员卡实体转换为展示对象
+     *
+     * @param card 会员卡实体
+     * @return 会员卡展示VO，包含分类和类型的中文描述
      */
     private MembershipCardVO convertToVO(MembershipCard card) {
         MembershipCardVO vo = new MembershipCardVO();
@@ -160,7 +177,7 @@ public class MembershipCardServiceImpl extends ServiceImpl<MembershipCardMapper,
             vo.setCardTypeDesc("未知");
         }
         // 设置状态描述
-        vo.setStatusDesc(card.getStatus() == 1 ? "在售" : "停售");
+        vo.setStatusDesc(CardSaleStatusEnum.ON_SHELF.getCode().equals(card.getStatus()) ? "在售" : "停售");
         return vo;
     }
 }

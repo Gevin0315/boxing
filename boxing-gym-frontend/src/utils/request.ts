@@ -22,6 +22,11 @@ const CONFIG = {
 }
 
 /**
+ * 是否正在处理 401 认证失败（防止多个请求同时触发跳转）
+ */
+let isHandling401 = false
+
+/**
  * 请求缓存 Map - 用于防止重复请求
  * key: 请求标识, value: AbortController
  */
@@ -143,9 +148,17 @@ service.interceptors.response.use(
 
       // 根据不同错误码做不同处理
       if (res.code === ErrorCode.UNAUTHORIZED) {
-        removeToken()
-        ElMessage.warning('登录已过期，请重新登录')
-        router.push('/login')
+        if (!isHandling401) {
+          isHandling401 = true
+          removeToken()
+          ElMessage.warning('登录已过期，请重新登录')
+          router.push('/login').finally(() => {
+            // 延迟重置标志，避免快速操作
+            setTimeout(() => {
+              isHandling401 = false
+            }, 1000)
+          })
+        }
         return Promise.reject(new Error(errorMsg))
       }
 
@@ -217,9 +230,18 @@ service.interceptors.response.use(
         }
         break
       case 401:
-        message = '未授权，请登录'
-        removeToken()
-        router.push('/login')
+        if (!isHandling401) {
+          isHandling401 = true
+          message = '未授权，请登录'
+          removeToken()
+          router.push('/login').finally(() => {
+            setTimeout(() => {
+              isHandling401 = false
+            }, 1000)
+          })
+        } else {
+          message = '未授权，请登录'
+        }
         break
       case 403:
         message = '拒绝访问'

@@ -5,12 +5,16 @@ import com.boxinggym.common.Result;
 import com.boxinggym.dto.MembershipCardDTO;
 import com.boxinggym.dto.MembershipCardVO;
 import com.boxinggym.entity.MembershipCard;
+import com.boxinggym.enums.CardSaleStatusEnum;
 import com.boxinggym.service.MembershipCardService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.RequiredArgsConstructor;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,6 +26,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/membership-card")
 @RequiredArgsConstructor
+@Validated
 public class MembershipCardController {
 
     private final MembershipCardService membershipCardService;
@@ -35,7 +40,8 @@ public class MembershipCardController {
     @Operation(summary = "按分类获取卡片")
     @GetMapping("/category/{category}")
     public Result<List<MembershipCardVO>> listByCategory(
-            @Parameter(description = "卡分类: 1-团课期限卡, 2-团课次卡, 3-私教次卡") @PathVariable Integer category) {
+            @Parameter(description = "卡分类: 1-团课期限卡, 2-团课次卡, 3-私教次卡")
+            @PathVariable @Min(value = 1, message = "卡分类值无效") @Max(value = 3, message = "卡分类值无效") Integer category) {
         return Result.success(membershipCardService.listByCategory(category));
     }
 
@@ -76,8 +82,17 @@ public class MembershipCardController {
     @PutMapping("/{id}/status")
     public Result<Void> updateStatus(
             @Parameter(description = "卡片ID") @PathVariable Long id,
-            @Parameter(description = "状态") @RequestParam Integer status) {
+            @Parameter(description = "状态: 0-停售, 1-在售")
+            @RequestParam @Min(value = 0, message = "状态值无效") @Max(value = 1, message = "状态值无效") Integer status) {
         membershipCardService.updateStatus(id, status);
+        return Result.success();
+    }
+
+    @Operation(summary = "删除卡片")
+    @DeleteMapping("/{id}")
+    public Result<Void> delete(
+            @Parameter(description = "卡片ID") @PathVariable Long id) {
+        membershipCardService.deleteById(id);
         return Result.success();
     }
 }
