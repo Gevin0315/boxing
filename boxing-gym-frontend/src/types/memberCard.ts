@@ -149,11 +149,12 @@ export interface CardUsageRecord {
 
 /** 会员持卡查询参数 */
 export interface MemberCardQuery {
-  current: number
-  size: number
-  memberId?: number
-  status?: MemberCardStatus
-  cardCategory?: CardCategory
+  pageNum: number
+  pageSize: number
+  cardNo?: string
+  memberName?: string
+  status?: MemberCardStatus | ''
+  cardCategory?: CardCategory | ''
 }
 
 /** 使用记录查询参数 */

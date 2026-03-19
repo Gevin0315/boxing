@@ -2,6 +2,7 @@ package com.boxinggym.controller;
 
 import com.boxinggym.common.BusinessException;
 import com.boxinggym.common.Result;
+import com.boxinggym.dto.BatchDeleteDTO;
 import com.boxinggym.dto.CheckinWithCardDTO;
 import com.boxinggym.dto.MemberCardVO;
 import com.boxinggym.entity.Course;
@@ -172,6 +173,20 @@ public class TrainingRecordController {
     public Result<String> delete(@PathVariable Long id) {
         boolean success = trainingRecordService.removeById(id);
         return success ? success("删除成功") : fail("删除失败");
+    }
+
+    /**
+     * 批量删除签到记录
+     */
+    @Operation(summary = "批量删除签到记录")
+    @DeleteMapping
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_RECEPTION')")
+    public Result<String> batchDelete(@Valid @RequestBody BatchDeleteDTO dto) {
+        if (dto.getIds() == null || dto.getIds().isEmpty()) {
+            return fail("ID列表不能为空");
+        }
+        boolean success = trainingRecordService.removeByIds(dto.getIds());
+        return success ? success("批量删除成功") : fail("批量删除失败");
     }
 
     /**

@@ -3,6 +3,7 @@ package com.boxinggym.controller;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.boxinggym.common.Result;
+import com.boxinggym.dto.BatchDeleteDTO;
 import com.boxinggym.entity.FinanceOrder;
 import com.boxinggym.entity.Member;
 import com.boxinggym.service.FinanceOrderService;
@@ -10,6 +11,7 @@ import com.boxinggym.service.MemberService;
 import com.boxinggym.utils.SecurityUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
@@ -119,6 +121,19 @@ public class MemberController {
         }
         boolean success = memberService.removeById(id);
         return success ? Result.success("删除成功") : Result.fail("删除失败");
+    }
+
+    /**
+     * 批量删除会员
+     */
+    @Operation(summary = "批量删除会员")
+    @DeleteMapping
+    public Result<String> batchDelete(@Valid @RequestBody BatchDeleteDTO dto) {
+        if (dto.getIds() == null || dto.getIds().isEmpty()) {
+            return Result.fail("ID列表不能为空");
+        }
+        boolean success = memberService.removeByIds(dto.getIds());
+        return success ? Result.success("批量删除成功") : Result.fail("批量删除失败");
     }
 
     /**

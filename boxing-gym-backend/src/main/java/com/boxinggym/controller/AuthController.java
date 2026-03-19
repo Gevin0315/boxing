@@ -1,6 +1,10 @@
 package com.boxinggym.controller;
 
+import cn.hutool.captcha.CaptchaUtil;
+import cn.hutool.captcha.LineCaptcha;
+import cn.hutool.core.util.IdUtil;
 import com.boxinggym.common.Result;
+import com.boxinggym.dto.CaptchaVO;
 import com.boxinggym.dto.LoginRequest;
 import com.boxinggym.dto.LoginResponse;
 import com.boxinggym.entity.SysUser;
@@ -15,6 +19,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Base64;
 
 import static com.boxinggym.common.Result.*;
 
@@ -33,6 +39,36 @@ public class AuthController {
     private final RedisUtil redisUtil;
 
     private static final String TOKEN_BLACKLIST_PREFIX = "gym:token:blacklist:";
+    private static final String CAPTCHA_PREFIX = "gym:captcha:";
+    private static final long CAPTCHA_EXPIRE_SECONDS = 300; // 验证码有效期5分钟
+
+    /**
+     * 获取验证码
+     */
+    @Operation(summary = "获取验证码")
+    @GetMapping("/captcha")
+    public Result<CaptchaVO> getCaptcha() {
+        // 生成验证码（使用Hutool工具）
+        LineCaptcha captcha = CaptchaUtil.createLineCaptcha(120, 40, 4, 20);
+
+        // 生成唯一标识
+        String uuid = IdUtil.simpleUUID();
+
+        // 获取验证码文本（忽略大小写）
+        String code = captcha.getCode();
+
+        // 存储到Redis，设置5分钟过期
+        String captchaKey = CAPTCHA_PREFIX + uuid;
+        redisUtil.set(captchaKey, code.toLowerCase(), CAPTCHA_EXPIRE_SECONDS);
+
+        // 构建响应
+        CaptchaVO captchaVO = CaptchaVO.builder()
+                .uuid(uuid)
+                .img(captcha.getImageBase64Data())
+                .build();
+
+        return success(captchaVO);
+    }
 
     /**
      * 登录

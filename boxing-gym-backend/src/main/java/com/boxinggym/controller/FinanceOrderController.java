@@ -3,6 +3,7 @@ package com.boxinggym.controller;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.boxinggym.common.Result;
 import com.boxinggym.dto.FinanceOrderDTO;
+import com.boxinggym.dto.OrderNoVO;
 import com.boxinggym.entity.FinanceOrder;
 import com.boxinggym.entity.Member;
 import com.boxinggym.service.FinanceOrderService;
@@ -240,7 +241,11 @@ public class FinanceOrderController {
      */
     @Operation(summary = "生成订单号")
     @GetMapping("/generate-no")
-    public Result<String> generateOrderNo() {
-        return success("ORD" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS")));
+    public Result<OrderNoVO> generateOrderNo() {
+        String orderNo = "ORD" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS"));
+        OrderNoVO vo = OrderNoVO.builder()
+                .orderNo(orderNo)
+                .build();
+        return success(vo);
     }
 }

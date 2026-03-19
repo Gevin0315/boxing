@@ -27,7 +27,10 @@
       "Bash(find:*)",
       "Bash(claude:*)",
       "Bash(npm run lint)",
-      "Bash(npx vue-tsc:*)"
+      "Bash(npx vue-tsc:*)",
+      "Bash(npx skills add:*)",
+      "Bash(node:*)",
+      "Bash(git reset:*)"
     ]
   }
 }

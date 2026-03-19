@@ -66,3 +66,8 @@ export function validateCardForCheckin(memberCardId: number, memberId: number, i
     params: { memberId, isPrivateClass },
   })
 }
+
+/** 分页查询会员持卡列表 */
+export function listMemberCards(params: MemberCardQuery) {
+  return request.get<ApiResponse<PageResult<MemberCard>>>(`${BASE_URL}/page`, { params })
+}

@@ -1,10 +1,12 @@
 package com.boxinggym.controller;
 
 import com.boxinggym.common.Result;
+import com.boxinggym.dto.BatchDeleteDTO;
 import com.boxinggym.entity.Course;
 import com.boxinggym.service.CourseService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -89,6 +91,20 @@ public class CourseController {
     public Result<String> delete(@PathVariable Long id) {
         boolean success = courseService.removeById(id);
         return success ? Result.success("删除成功") : Result.fail("删除失败");
+    }
+
+    /**
+     * 批量删除课程
+     */
+    @Operation(summary = "批量删除课程")
+    @DeleteMapping
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_RECEPTION')")
+    public Result<String> batchDelete(@Valid @RequestBody BatchDeleteDTO dto) {
+        if (dto.getIds() == null || dto.getIds().isEmpty()) {
+            return Result.fail("ID列表不能为空");
+        }
+        boolean success = courseService.removeByIds(dto.getIds());
+        return success ? Result.success("批量删除成功") : Result.fail("批量删除失败");
     }
 
     /**
