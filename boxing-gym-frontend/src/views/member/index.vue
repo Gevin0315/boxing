@@ -1,9 +1,20 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Search, Refresh, Edit, Delete, Coin, Wallet } from '@element-plus/icons-vue'
+import { Plus, Search, Refresh, Edit, Delete, Coin, Wallet, CreditCard, View } from '@element-plus/icons-vue'
 import { listMember, delMember, updateMemberStatus, memberRecharge, memberDeduct } from '@/api/member'
+import { getMemberCards, activateCard, voidCard, getCardUsageRecords } from '@/api/memberCard'
 import { MEMBER_STATUS, MEMBERSHIP_LEVEL, GENDER } from '@/constants/dict'
+import {
+  MemberCardStatus,
+  MEMBER_CARD_STATUS_MAP,
+  MEMBER_CARD_STATUS_TAG_TYPE,
+  CardCategory,
+  CARD_CATEGORY_MAP,
+  CARD_USAGE_TYPE_MAP,
+  type MemberCard,
+  type CardUsageRecord,
+} from '@/types/memberCard'
 import { getDictLabel, formatCurrency } from '@/utils/format'
 import Pagination from '@/components/common/Pagination.vue'
 import AddEdit from './add-edit.vue'
@@ -31,6 +42,17 @@ const rechargeForm = reactive({
   memberId: undefined as number | undefined,
   amount: 0
 })
+
+// 展开行相关
+const memberCardsMap = ref<Map<number, MemberCard[]>>(new Map())
+const cardsLoadingMap = ref<Map<number, boolean>>(new Map())
+const expandedRowKeys = ref<number[]>([])
+
+// 使用记录抽屉
+const drawerVisible = ref(false)
+const usageRecords = ref<CardUsageRecord[]>([])
+const usageLoading = ref(false)
+const selectedCard = ref<MemberCard | null>(null)
 
 onMounted(() => {
   getList()
@@ -158,6 +180,93 @@ const handlePageChange = (page: number, pageSize: number) => {
   queryParams.pageSize = pageSize
   getList()
 }
+
+/** 处理行展开 */
+const handleExpandChange = async (row: Member, expandedRows: Member[]) => {
+  expandedRowKeys.value = expandedRows.map(r => r.id!)
+
+  if (expandedRows.some(r => r.id === row.id) && !memberCardsMap.value.has(row.id!)) {
+    await loadMemberCards(row.id!)
+  }
+}
+
+/** 加载会员卡片 */
+const loadMemberCards = async (memberId: number) => {
+  cardsLoadingMap.value.set(memberId, true)
+  try {
+    const res = await getMemberCards(memberId)
+    memberCardsMap.value.set(memberId, res.data || [])
+  } catch (error) {
+    console.error('Failed to load member cards:', error)
+    memberCardsMap.value.set(memberId, [])
+  } finally {
+    cardsLoadingMap.value.set(memberId, false)
+  }
+}
+
+/** 格式化日期 */
+const formatDate = (date: string | undefined) => {
+  if (!date) return '-'
+  return date.split('T')[0] || date.split(' ')[0]
+}
+
+/** 激活卡片 */
+const handleActivateCard = async (card: MemberCard, memberId: number) => {
+  try {
+    await ElMessageBox.confirm(`确定要激活卡片 "${card.cardNo}" 吗？`, '激活确认', {
+      confirmButtonText: '确定激活',
+      cancelButtonText: '取消',
+      type: 'info',
+    })
+    await activateCard({ memberCardId: card.id })
+    ElMessage.success('激活成功')
+    memberCardsMap.value.delete(memberId)
+    await loadMemberCards(memberId)
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      console.error('Failed to activate card:', error)
+      ElMessage.error('激活失败')
+    }
+  }
+}
+
+/** 作废卡片 */
+const handleVoidCard = async (card: MemberCard, memberId: number) => {
+  try {
+    const { value } = await ElMessageBox.prompt('请输入作废原因', '作废确认', {
+      confirmButtonText: '确定作废',
+      cancelButtonText: '取消',
+      inputPattern: /\S+/,
+      inputErrorMessage: '请输入作废原因',
+      type: 'warning',
+    })
+    await voidCard({ memberCardId: card.id, reason: value })
+    ElMessage.success('作废成功')
+    memberCardsMap.value.delete(memberId)
+    await loadMemberCards(memberId)
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      console.error('Failed to void card:', error)
+      ElMessage.error('作废失败')
+    }
+  }
+}
+
+/** 查看使用记录 */
+const handleViewRecords = async (card: MemberCard) => {
+  selectedCard.value = card
+  drawerVisible.value = true
+  usageLoading.value = true
+  try {
+    const res = await getCardUsageRecords(card.id)
+    usageRecords.value = res.data || []
+  } catch (error) {
+    console.error('Failed to load usage records:', error)
+    usageRecords.value = []
+  } finally {
+    usageLoading.value = false
+  }
+}
 </script>
 
 <template>
@@ -205,7 +314,98 @@ const handlePageChange = (page: number, pageSize: number) => {
     </div>
 
     <!-- 数据表格 -->
-    <el-table v-loading="loading" :data="memberList" stripe border>
+    <el-table
+      v-loading="loading"
+      :data="memberList"
+      stripe
+      border
+      :row-key="(row: Member) => row.id"
+      :expand-row-keys="expandedRowKeys"
+      @expand-change="handleExpandChange"
+    >
+      <!-- 展开列 -->
+      <el-table-column type="expand" width="50">
+        <template #default="{ row }">
+          <div class="expand-content" v-loading="cardsLoadingMap.get(row.id!)">
+            <div v-if="memberCardsMap.get(row.id!)?.length" class="cards-table-wrapper">
+              <div class="cards-header">
+                <el-icon><CreditCard /></el-icon>
+                <span>持卡信息 ({{ memberCardsMap.get(row.id!)?.length || 0 }}张)</span>
+              </div>
+              <el-table :data="memberCardsMap.get(row.id!)" size="small" border>
+                <el-table-column prop="cardNo" label="卡号" width="150" />
+                <el-table-column prop="cardName" label="卡名称" min-width="120" />
+                <el-table-column prop="cardCategory" label="卡分类" width="100">
+                  <template #default="{ row: card }">
+                    {{ CARD_CATEGORY_MAP[card.cardCategory] || card.cardCategoryDesc }}
+                  </template>
+                </el-table-column>
+                <el-table-column prop="status" label="状态" width="90">
+                  <template #default="{ row: card }">
+                    <el-tag :type="MEMBER_CARD_STATUS_TAG_TYPE[card.status]" size="small">
+                      {{ MEMBER_CARD_STATUS_MAP[card.status] || card.statusDesc }}
+                    </el-tag>
+                  </template>
+                </el-table-column>
+                <el-table-column label="剩余次数/有效期" width="140">
+                  <template #default="{ row: card }">
+                    <template v-if="card.cardCategory === CardCategory.GROUP_TIME">
+                      {{ card.remainingDays ?? '-' }}天
+                    </template>
+                    <template v-else>
+                      {{ card.remainingSessions ?? 0 }}次
+                    </template>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="purchaseTime" label="购卡日期" width="110">
+                  <template #default="{ row: card }">
+                    {{ formatDate(card.purchaseTime) }}
+                  </template>
+                </el-table-column>
+                <el-table-column prop="activationTime" label="激活日期" width="110">
+                  <template #default="{ row: card }">
+                    {{ formatDate(card.activationTime) }}
+                  </template>
+                </el-table-column>
+                <el-table-column prop="expireDate" label="到期日期" width="110">
+                  <template #default="{ row: card }">
+                    {{ formatDate(card.expireDate) }}
+                  </template>
+                </el-table-column>
+                <el-table-column label="操作" width="180" fixed="right">
+                  <template #default="{ row: card }">
+                    <el-button
+                      v-if="card.canBeActivated"
+                      type="success"
+                      link
+                      size="small"
+                      @click="handleActivateCard(card, row.id)"
+                    >
+                      激活
+                    </el-button>
+                    <el-button
+                      v-if="card.status === MemberCardStatus.ACTIVE"
+                      type="danger"
+                      link
+                      size="small"
+                      @click="handleVoidCard(card, row.id)"
+                    >
+                      作废
+                    </el-button>
+                    <el-button type="primary" link size="small" @click="handleViewRecords(card)">
+                      <el-icon><View /></el-icon>
+                      记录
+                    </el-button>
+                  </template>
+                </el-table-column>
+              </el-table>
+            </div>
+            <div v-else-if="!cardsLoadingMap.get(row.id!)" class="no-cards">
+              暂无持卡信息
+            </div>
+          </div>
+        </template>
+      </el-table-column>
       <el-table-column type="index" label="序号" width="60" align="center" />
       <el-table-column prop="memberNo" label="会员号" width="120" />
       <el-table-column prop="name" label="姓名" min-width="100" />
@@ -276,6 +476,51 @@ const handlePageChange = (page: number, pageSize: number) => {
         <el-button type="primary" @click="handleRechargeSubmit">确定</el-button>
       </template>
     </el-dialog>
+
+    <!-- 使用记录抽屉 -->
+    <el-drawer
+      v-model="drawerVisible"
+      :title="`卡片使用记录 - ${selectedCard?.cardNo || ''}`"
+      size="600px"
+    >
+      <el-table v-loading="usageLoading" :data="usageRecords" stripe border size="small">
+        <el-table-column type="index" label="序号" width="60" align="center" />
+        <el-table-column prop="usageType" label="类型" width="80">
+          <template #default="{ row }">
+            <el-tag :type="row.usageType === 1 ? 'success' : row.usageType === 2 ? 'primary' : row.usageType === 3 ? 'info' : 'danger'" size="small">
+              {{ CARD_USAGE_TYPE_MAP[row.usageType] || row.usageTypeDesc }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="courseName" label="课程" min-width="120">
+          <template #default="{ row }">
+            {{ row.courseName || '-' }}
+          </template>
+        </el-table-column>
+        <el-table-column label="次数变化" width="100">
+          <template #default="{ row }">
+            <template v-if="row.sessionsBefore !== undefined && row.sessionsAfter !== undefined">
+              {{ row.sessionsBefore }} -> {{ row.sessionsAfter }}
+            </template>
+            <template v-else>-</template>
+          </template>
+        </el-table-column>
+        <el-table-column prop="operatorName" label="操作人" width="100">
+          <template #default="{ row }">
+            {{ row.operatorName || '-' }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="createTime" label="操作时间" width="160" />
+        <el-table-column prop="remark" label="备注" min-width="120">
+          <template #default="{ row }">
+            {{ row.remark || '-' }}
+          </template>
+        </el-table-column>
+      </el-table>
+      <div v-if="!usageLoading && !usageRecords.length" class="no-records">
+        暂无使用记录
+      </div>
+    </el-drawer>
   </div>
 </template>
 
@@ -295,5 +540,40 @@ const handlePageChange = (page: number, pageSize: number) => {
 
 .toolbar {
   margin-bottom: 20px;
+}
+
+.expand-content {
+  padding: 12px 20px;
+  background: #fafafa;
+}
+
+.cards-table-wrapper {
+  background: #fff;
+  border-radius: 4px;
+  padding: 12px;
+}
+
+.cards-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #303133;
+}
+
+.no-cards {
+  text-align: center;
+  color: #909399;
+  padding: 20px;
+  font-size: 14px;
+}
+
+.no-records {
+  text-align: center;
+  color: #909399;
+  padding: 40px;
+  font-size: 14px;
 }
 </style>
