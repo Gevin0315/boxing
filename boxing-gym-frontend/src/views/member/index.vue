@@ -222,7 +222,7 @@ const handleActivateCard = async (card: MemberCard, memberId: number) => {
     ElMessage.success('激活成功')
     memberCardsMap.value.delete(memberId)
     await loadMemberCards(memberId)
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error !== 'cancel') {
       console.error('Failed to activate card:', error)
       ElMessage.error('激活失败')
@@ -244,7 +244,7 @@ const handleVoidCard = async (card: MemberCard, memberId: number) => {
     ElMessage.success('作废成功')
     memberCardsMap.value.delete(memberId)
     await loadMemberCards(memberId)
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error !== 'cancel') {
       console.error('Failed to void card:', error)
       ElMessage.error('作废失败')
@@ -319,7 +319,7 @@ const handleViewRecords = async (card: MemberCard) => {
       :data="memberList"
       stripe
       border
-      :row-key="(row: Member) => row.id"
+      :row-key="(row) => row.id"
       :expand-row-keys="expandedRowKeys"
       @expand-change="handleExpandChange"
     >
