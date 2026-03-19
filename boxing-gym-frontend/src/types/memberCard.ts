@@ -147,15 +147,6 @@ export interface CardUsageRecord {
   operatorName?: string
 }
 
-/** 会员持卡查询参数 */
-export interface MemberCardQuery {
-  pageNum: number
-  pageSize: number
-  cardNo?: string
-  memberName?: string
-  status?: MemberCardStatus | ''
-  cardCategory?: CardCategory | ''
-}
 
 /** 使用记录查询参数 */
 export interface CardUsageRecordQuery {

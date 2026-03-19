@@ -4,7 +4,6 @@
 import request from '@/utils/request'
 import type {
   MemberCard,
-  MemberCardQuery,
   PurchaseCardDTO,
   ActivateCardDTO,
   VoidCardDTO,
@@ -67,7 +66,3 @@ export function validateCardForCheckin(memberCardId: number, memberId: number, i
   })
 }
 
-/** 分页查询会员持卡列表 */
-export function listMemberCards(params: MemberCardQuery) {
-  return request.get<ApiResponse<PageResult<MemberCard>>>(`${BASE_URL}/page`, { params })
-}
