@@ -1,4 +1,5 @@
 import request from '@/utils/request'
+import { USER_ROLE } from '@/constants/dict'
 import type { SysUser, SysUserQuery, SysUserForm, RoleOption } from '@/types/sys-user'
 
 const mapSysUser = (item: any): SysUser => ({
@@ -17,29 +18,23 @@ const mapSysUser = (item: any): SysUser => ({
 
 /** 查询系统用户列表 */
 export async function listSysUser(query: SysUserQuery) {
-  const list = await request.get<any[]>('/sys-user/list')
-  let rows = (list || []).map(mapSysUser)
-
-  if (query.username) {
-    rows = rows.filter((u) => u.username.includes(query.username!))
+  const data: any = await request.get('/sys-user/page', {
+    params: {
+      current: query.pageNum || 1,
+      size: query.pageSize || 10,
+      username: query.username || undefined,
+      realName: query.realName || undefined,
+      phone: query.phone || undefined,
+      role: query.role || undefined,
+      status: query.status !== undefined && query.status !== null
+        ? query.status
+        : undefined
+    }
+  })
+  return {
+    rows: (data?.records || []).map(mapSysUser),
+    total: data?.total || 0
   }
-  if (query.nickname) {
-    rows = rows.filter((u) => u.nickname.includes(query.nickname!))
-  }
-  if (query.role) {
-    rows = rows.filter((u) => (u.role || '').includes(query.role!))
-  }
-  if (query.status) {
-    rows = rows.filter((u) => u.status === query.status)
-  }
-
-  const total = rows.length
-  const pageNum = query.pageNum || 1
-  const pageSize = query.pageSize || 10
-  const start = (pageNum - 1) * pageSize
-  rows = rows.slice(start, start + pageSize)
-
-  return { rows, total }
 }
 
 /** 查询系统用户详情 */
@@ -91,4 +86,12 @@ export function updateUserStatus(id: number, status: number) {
   return request.put('/sys-user/status', null, {
     params: { id, status }
   })
+}
+
+/** 获取角色列表 */
+export function getRoleList(): Promise<RoleOption[]> {
+  return Promise.resolve(USER_ROLE.map(item => ({
+    value: item.value as string,
+    label: item.label
+  })))
 }
