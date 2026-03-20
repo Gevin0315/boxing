@@ -1,9 +1,12 @@
 package com.boxinggym.controller;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.boxinggym.common.Result;
 import com.boxinggym.dto.BatchDeleteDTO;
+import com.boxinggym.dto.CourseQueryDTO;
 import com.boxinggym.entity.Course;
 import com.boxinggym.service.CourseService;
+import com.boxinggym.vo.CourseVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -24,6 +27,15 @@ import java.util.List;
 public class CourseController {
 
     private final CourseService courseService;
+
+    /**
+     * 分页查询课程
+     */
+    @Operation(summary = "分页查询课程")
+    @GetMapping("/page")
+    public Result<Page<CourseVO>> page(CourseQueryDTO query) {
+        return Result.success(courseService.page(query));
+    }
 
     /**
      * 查询所有课程

@@ -8,8 +8,8 @@ const toFrontendType = (type?: number | string) => (Number(type) === 2 ? 'privat
 
 const mapCourse = (item: any): Course => ({
   id: item.id,
-  courseName: item.name || '',
-  courseType: toFrontendType(item.type),
+  courseName: item.courseName || item.name || '',
+  courseType: toFrontendType(item.courseType ?? item.type),
   category: item.category || '',
   level: item.level || '',
   maxCapacity: item.maxCapacity || 20,
@@ -17,8 +17,8 @@ const mapCourse = (item: any): Course => ({
   price: Number(item.price || 0),
   description: item.description || '',
   coachId: item.coachId,
-  coachName: '',
-  imageUrl: item.coverImg || '',
+  coachName: item.coachName || '',
+  imageUrl: item.imageUrl || item.coverImg || '',
   status: toFrontendStatus(item.status) as '0' | '1',
   createTime: item.createTime,
   updateTime: item.updateTime
@@ -41,27 +41,29 @@ const buildCoursePayload = (data: CourseForm) => ({
   coachId: data.coachId
 })
 
-/** 查询课程列表 */
+/** 查询课程分页列表 */
+export async function pageCourse(query: CourseQuery) {
+  const params: Record<string, any> = {
+    current: query.pageNum || 1,
+    size: query.pageSize || 10
+  }
+  if (query.courseName) params.name = query.courseName
+  if (query.courseType) params.type = query.courseType === 'private' ? 2 : 1
+  if (query.category) params.category = query.category
+  if (query.level) params.level = query.level
+  if (query.coachId) params.coachId = query.coachId
+  if (query.status) params.status = query.status === '0' ? 1 : 0
+
+  const data = await request.get<{ records: any[]; total: number; current: number; size: number }>('/course/page', { params })
+  return {
+    rows: data.records.map(mapCourse),
+    total: data.total
+  }
+}
+
+/** 查询课程列表（改为调用分页接口）*/
 export async function listCourse(query: CourseQuery) {
-  const list = await request.get<any[]>('/course/list')
-  let rows = (list || []).map(mapCourse)
-
-  if (query.courseName) {
-    rows = rows.filter((c) => c.courseName.includes(query.courseName!))
-  }
-  if (query.courseType) {
-    rows = rows.filter((c) => c.courseType === query.courseType)
-  }
-  if (query.status) {
-    rows = rows.filter((c) => c.status === query.status)
-  }
-
-  const total = rows.length
-  const pageNum = query.pageNum || 1
-  const pageSize = query.pageSize || 10
-  const start = (pageNum - 1) * pageSize
-  rows = rows.slice(start, start + pageSize)
-  return { rows, total }
+  return pageCourse(query)
 }
 
 /** 查询课程详情 */
