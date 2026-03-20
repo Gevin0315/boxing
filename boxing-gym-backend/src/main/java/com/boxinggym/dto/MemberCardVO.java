@@ -17,9 +17,6 @@ public class MemberCardVO {
     @Schema(description = "主键ID")
     private Long id;
 
-    @Schema(description = "会员卡号")
-    private String cardNo;
-
     @Schema(description = "会员ID")
     private Long memberId;
 

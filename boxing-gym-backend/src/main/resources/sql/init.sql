@@ -246,7 +246,6 @@ CREATE TABLE `membership_card` (
 -- member_card (会员持卡记录表)
 CREATE TABLE `member_card` (
     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
-    `card_no` VARCHAR(32) NOT NULL COMMENT '会员卡号',
     `member_id` BIGINT NOT NULL COMMENT '会员ID',
     `card_id` BIGINT NOT NULL COMMENT '卡片定义ID',
     `card_category` TINYINT NOT NULL COMMENT '卡分类',
@@ -266,7 +265,6 @@ CREATE TABLE `member_card` (
     `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `deleted` TINYINT DEFAULT 0 COMMENT '逻辑删除: 0-未删除, 1-已删除',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_card_no` (`card_no`),
     KEY `idx_member_id` (`member_id`),
     KEY `idx_card_id` (`card_id`),
     KEY `idx_status` (`status`),
@@ -288,7 +286,6 @@ CREATE TABLE `card_usage_record` (
     `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `create_by` BIGINT COMMENT '操作人ID',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_record_no` (`record_no`),
     KEY `idx_member_card_id` (`member_card_id`),
     KEY `idx_member_id` (`member_id`),
     KEY `idx_usage_type` (`usage_type`),
@@ -388,3 +385,82 @@ INSERT INTO `membership_card` (`card_name`, `card_category`, `card_type`, `durat
 ('5次私教卡', 3, 'SESSION_PRIVATE_5', NULL, 5, 1799.00, 1995.00, 30, 90, '5次私教卡，激活后90天内有效', 1, 7),
 ('10次私教卡', 3, 'SESSION_PRIVATE_10', NULL, 10, 3299.00, 3990.00, 30, 180, '10次私教卡，激活后180天内有效', 1, 8),
 ('20次私教卡', 3, 'SESSION_PRIVATE_20', NULL, 20, 5999.00, 7980.00, 30, 365, '20次私教卡，激活后365天内有效', 1, 9);
+
+-- 初始化会员持卡记录数据
+INSERT INTO `member_card` (`member_id`, `card_id`, `card_category`, `card_type`, `status`, `total_sessions`, `remaining_sessions`, `purchase_time`, `activation_deadline`, `activation_time`, `start_date`, `expire_date`, `last_checkin_time`, `order_id`, `remark`) VALUES
+-- 张三(会员ID=1)的卡
+(1, 3, 1, 'YEARLY', 1, NULL, NULL, '2024-01-15 10:30:00', '2024-02-14', '2024-01-20 09:00:00', '2024-01-20', '2025-01-20', DATE_SUB(NOW(), INTERVAL 1 DAY), NULL, '团课年卡-生效中'),
+(1, 8, 3, 'SESSION_PRIVATE_10', 1, 10, 7, '2024-02-01 14:20:00', '2024-03-03', '2024-02-05 11:00:00', '2024-02-05', '2024-08-05', DATE_SUB(NOW(), INTERVAL 3 DAY), NULL, '10次私教卡-生效中'),
+-- 李四(会员ID=2)的卡
+(2, 2, 1, 'QUARTERLY', 1, NULL, NULL, '2024-01-20 15:45:00', '2024-02-19', '2024-01-25 10:00:00', '2024-01-25', '2024-04-25', DATE_SUB(NOW(), INTERVAL 2 DAY), NULL, '团课季卡-生效中'),
+(2, 5, 2, 'SESSION_GROUP_10', 1, 10, 6, '2024-03-10 09:15:00', '2024-04-09', '2024-03-15 14:00:00', '2024-03-15', '2024-04-14', DATE_SUB(NOW(), INTERVAL 1 DAY), NULL, '10次团课卡-生效中'),
+-- 王五(会员ID=3)的卡
+(3, 3, 1, 'YEARLY', 1, NULL, NULL, '2023-12-01 11:00:00', '2023-12-31', '2023-12-05 09:00:00', '2023-12-05', '2024-12-05', DATE_SUB(NOW(), INTERVAL 2 DAY), NULL, '团课年卡-生效中'),
+(3, 9, 3, 'SESSION_PRIVATE_20', 1, 20, 15, '2024-02-15 16:30:00', '2024-03-17', '2024-02-20 10:00:00', '2024-02-20', '2025-02-20', DATE_SUB(NOW(), INTERVAL 5 DAY), NULL, '20次私教卡-生效中'),
+-- 赵六(会员ID=4)的卡
+(4, 4, 2, 'SESSION_GROUP_1', 2, 1, 0, '2024-02-10 13:00:00', '2024-03-12', '2024-02-10 13:00:00', '2024-02-10', '2024-02-10', '2024-02-10 14:30:00', NULL, '单次日卡-已过期'),
+(4, 1, 1, 'MONTHLY', 0, NULL, NULL, '2024-03-15 10:00:00', '2024-04-14', NULL, NULL, NULL, NULL, NULL, '团课月卡-未激活'),
+-- 钱七(会员ID=5)的卡
+(5, 2, 1, 'QUARTERLY', 1, NULL, NULL, '2024-01-25 09:30:00', '2024-02-24', '2024-01-28 11:00:00', '2024-01-28', '2024-04-28', DATE_SUB(NOW(), INTERVAL 1 DAY), NULL, '团课季卡-生效中'),
+(5, 6, 2, 'SESSION_GROUP_20', 1, 20, 12, '2024-02-20 14:00:00', '2024-03-21', '2024-02-25 09:00:00', '2024-02-25', '2024-04-25', DATE_SUB(NOW(), INTERVAL 2 DAY), NULL, '20次团课卡-生效中'),
+-- 已过期和已作废的卡
+(1, 1, 1, 'MONTHLY', 2, NULL, NULL, '2023-10-01 10:00:00', '2023-10-31', '2023-10-05 09:00:00', '2023-10-05', '2023-11-05', '2023-11-03 18:00:00', NULL, '团课月卡-已过期'),
+(2, 5, 2, 'SESSION_GROUP_10', 3, 10, 3, '2023-11-15 11:00:00', '2023-12-15', '2023-11-20 10:00:00', '2023-11-20', '2023-12-20', '2023-12-10 15:00:00', NULL, '10次团课卡-已作废(会员申请退款)');
+
+-- 初始化卡片使用记录数据
+INSERT INTO `card_usage_record` (`record_no`, `member_card_id`, `member_id`, `usage_type`, `schedule_id`, `training_record_id`, `sessions_before`, `sessions_after`, `remark`, `create_by`) VALUES
+-- 张三的卡使用记录 (member_card_id=1, 年卡)
+('UR20240120001', 1, 1, 1, NULL, NULL, NULL, NULL, '团课年卡激活', 2),
+('UR20240125001', 1, 1, 2, 1, 1, NULL, NULL, '拳击基础课签到', 2),
+('UR20240201001', 1, 1, 2, 3, 3, NULL, NULL, '巴西柔术课签到', 2),
+-- 张三的私教卡使用记录 (member_card_id=2)
+('UR20240205001', 2, 1, 1, NULL, NULL, 10, 10, '10次私教卡激活', 2),
+('UR20240210001', 2, 1, 2, 8, NULL, 10, 9, '拳击私教签到', 2),
+('UR20240215001', 2, 1, 2, 8, NULL, 9, 8, '拳击私教签到', 3),
+('UR20240220001', 2, 1, 2, 8, NULL, 8, 7, '拳击私教签到', 3),
+-- 李四的卡使用记录
+('UR20240125002', 3, 2, 1, NULL, NULL, NULL, NULL, '团课季卡激活', 2),
+('UR20240201002', 3, 2, 2, 1, 2, NULL, NULL, '拳击基础课签到', 2),
+('UR20240205002', 3, 2, 2, 2, NULL, NULL, NULL, '泰拳入门课签到', 2),
+('UR20240315001', 4, 2, 1, NULL, NULL, 10, 10, '10次团课卡激活', 2),
+('UR20240318001', 4, 2, 2, 4, NULL, 10, 9, '健身搏击课签到', 2),
+('UR20240320001', 4, 2, 2, 5, NULL, 9, 8, '拳击基础课签到', 2),
+('UR20240322001', 4, 2, 2, 6, NULL, 8, 7, '泰拳课签到', 2),
+('UR20240325001', 4, 2, 2, 7, NULL, 7, 6, '巴西柔术课签到', 2),
+-- 王五的卡使用记录
+('UR20231205001', 5, 3, 1, NULL, NULL, NULL, NULL, '团课年卡激活', 2),
+('UR20240101001', 5, 3, 2, 1, NULL, NULL, NULL, '新年第一练-拳击基础', 2),
+('UR20240105001', 5, 3, 2, 2, NULL, NULL, NULL, '泰拳课签到', 2),
+('UR20240205002', 6, 3, 1, NULL, NULL, 20, 20, '20次私教卡激活', 2),
+('UR20240210002', 6, 3, 2, 8, NULL, 20, 19, '泰拳私教签到', 4),
+('UR20240215002', 6, 3, 2, 8, NULL, 19, 18, '泰拳私教签到', 4),
+('UR20240220002', 6, 3, 2, 8, NULL, 18, 17, '泰拳私教签到', 4),
+('UR20240225001', 6, 3, 2, 8, NULL, 17, 16, '泰拳私教签到', 4),
+('UR20240301001', 6, 3, 2, 8, NULL, 16, 15, '泰拳私教签到', 4),
+-- 赵六的卡使用记录
+('UR20240210003', 7, 4, 1, NULL, NULL, 1, 1, '单次日卡激活并使用', 2),
+('UR20240210004', 7, 4, 2, 5, NULL, 1, 0, '单次日卡签到', 2),
+('UR20240215003', 7, 4, 3, NULL, NULL, 0, 0, '卡片过期', NULL),
+-- 钱七的卡使用记录
+('UR20240128001', 8, 5, 1, NULL, NULL, NULL, NULL, '团课季卡激活', 2),
+('UR20240201003', 8, 5, 2, 1, NULL, NULL, NULL, '拳击基础课签到', 2),
+('UR20240208001', 8, 5, 2, 2, NULL, NULL, NULL, '泰拳课签到', 2),
+('UR20240225002', 9, 5, 1, NULL, NULL, 20, 20, '20次团课卡激活', 2),
+('UR20240228001', 9, 5, 2, 3, NULL, 20, 19, '巴西柔术课签到', 2),
+('UR20240301002', 9, 5, 2, 4, NULL, 19, 18, '健身搏击课签到', 2),
+('UR20240305001', 9, 5, 2, 1, NULL, 18, 17, '拳击基础课签到', 2),
+('UR20240308001', 9, 5, 2, 2, NULL, 17, 16, '泰拳课签到', 2),
+('UR20240312001', 9, 5, 2, 6, NULL, 16, 15, '健身搏击课签到', 2),
+('UR20240315002', 9, 5, 2, 7, NULL, 15, 14, '巴西柔术课签到', 2),
+('UR20240318002', 9, 5, 2, 5, NULL, 14, 13, '拳击基础课签到', 2),
+('UR20240320002', 9, 5, 2, 1, NULL, 13, 12, '拳击基础课签到', 2),
+-- 已作废卡片的记录
+('UR20231120001', 11, 2, 1, NULL, NULL, 10, 10, '10次团课卡激活', 2),
+('UR20231125001', 11, 2, 2, NULL, NULL, 10, 9, '团课签到', 2),
+('UR20231201001', 11, 2, 2, NULL, NULL, 9, 8, '团课签到', 2),
+('UR20231205002', 11, 2, 2, NULL, NULL, 8, 7, '团课签到', 2),
+('UR20231210001', 11, 2, 2, NULL, NULL, 7, 6, '团课签到', 2),
+('UR20231215001', 11, 2, 2, NULL, NULL, 6, 5, '团课签到', 2),
+('UR20231220001', 11, 2, 2, NULL, NULL, 5, 4, '团课签到', 2),
+('UR20231225001', 11, 2, 2, NULL, NULL, 4, 3, '团课签到', 2),
+('UR20231228001', 11, 2, 4, NULL, NULL, 3, 3, '会员申请退款-卡片作废', 1);

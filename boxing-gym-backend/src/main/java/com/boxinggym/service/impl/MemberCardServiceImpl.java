@@ -293,7 +293,7 @@ public class MemberCardServiceImpl extends ServiceImpl<MemberCardMapper, MemberC
                     0,
                     "系统自动过期"
             );
-            log.info("卡片过期: cardNo={}, memberId={}", card.getCardNo(), card.getMemberId());
+            log.info("卡片过期: cardId={}, memberId={}", card.getId(), card.getMemberId());
         }
         log.info("过期卡片检查完成，共{}张", expiredCards.size());
     }
@@ -323,7 +323,7 @@ public class MemberCardServiceImpl extends ServiceImpl<MemberCardMapper, MemberC
                     0,
                     "超过激活期限，系统自动作废"
             );
-            log.info("卡片超期未激活作废: cardNo={}, memberId={}", card.getCardNo(), card.getMemberId());
+            log.info("卡片超期未激活作废: cardId={}, memberId={}", card.getId(), card.getMemberId());
         }
         log.info("激活期限检查完成，共作废{}张", voidedCards.size());
     }

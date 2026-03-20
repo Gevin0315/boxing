@@ -306,7 +306,7 @@ public class TrainingRecordController {
 
         Map<String, Object> result = new HashMap<>();
         result.put("recordId", record.getId());
-        result.put("cardNo", cardVO.getCardNo());
+        result.put("cardId", cardVO.getId());
         result.put("cardType", cardVO.getCardTypeDesc());
         result.put("remainingSessions", cardVO.getRemainingSessions());
 

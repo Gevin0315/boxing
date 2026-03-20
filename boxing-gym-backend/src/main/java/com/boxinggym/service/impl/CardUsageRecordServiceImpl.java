@@ -7,12 +7,10 @@ import com.boxinggym.dto.CardUsageRecordVO;
 import com.boxinggym.entity.CardUsageRecord;
 import com.boxinggym.entity.CourseSchedule;
 import com.boxinggym.entity.Member;
-import com.boxinggym.entity.MemberCard;
 import com.boxinggym.entity.SysUser;
 import com.boxinggym.enums.CardUsageTypeEnum;
 import com.boxinggym.mapper.CardUsageRecordMapper;
 import com.boxinggym.mapper.CourseScheduleMapper;
-import com.boxinggym.mapper.MemberCardMapper;
 import com.boxinggym.mapper.MemberMapper;
 import com.boxinggym.mapper.SysUserMapper;
 import com.boxinggym.service.CardUsageRecordService;
@@ -36,7 +34,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class CardUsageRecordServiceImpl extends ServiceImpl<CardUsageRecordMapper, CardUsageRecord> implements CardUsageRecordService {
 
-    private final MemberCardMapper memberCardMapper;
     private final MemberMapper memberMapper;
     private final SysUserMapper sysUserMapper;
     private final CourseScheduleMapper courseScheduleMapper;
@@ -100,14 +97,10 @@ public class CardUsageRecordServiceImpl extends ServiceImpl<CardUsageRecordMappe
             return List.of();
         }
         // 批量获取关联数据
-        List<Long> memberCardIds = records.stream().map(CardUsageRecord::getMemberCardId).distinct().toList();
         List<Long> memberIds = records.stream().map(CardUsageRecord::getMemberId).distinct().toList();
         List<Long> scheduleIds = records.stream().map(CardUsageRecord::getScheduleId).filter(id -> id != null).distinct().toList();
         List<Long> createBys = records.stream().map(CardUsageRecord::getCreateBy).filter(id -> id != null).distinct().toList();
         // 查询关联数据
-        Map<Long, MemberCard> cardMap = memberCardIds.isEmpty() ? Map.of() :
-                memberCardMapper.selectBatchIds(memberCardIds).stream()
-                        .collect(Collectors.toMap(MemberCard::getId, c -> c));
         Map<Long, Member> memberMap = memberIds.isEmpty() ? Map.of() :
                 memberMapper.selectBatchIds(memberIds).stream()
                         .collect(Collectors.toMap(Member::getId, m -> m));
@@ -120,11 +113,6 @@ public class CardUsageRecordServiceImpl extends ServiceImpl<CardUsageRecordMappe
         return records.stream().map(record -> {
             CardUsageRecordVO vo = new CardUsageRecordVO();
             BeanUtils.copyProperties(record, vo);
-            // 设置卡号
-            MemberCard card = cardMap.get(record.getMemberCardId());
-            if (card != null) {
-                vo.setCardNo(card.getCardNo());
-            }
             // 设置会员名称
             Member member = memberMap.get(record.getMemberId());
             if (member != null) {
