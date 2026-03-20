@@ -2,7 +2,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search, Refresh, Edit, Delete, Money } from '@element-plus/icons-vue'
-import { listFinanceOrder, delFinanceOrder, payOrder, refundOrder, generateOrderNo } from '@/api/finance-order'
+import { pageFinanceOrder, delFinanceOrder, payOrder, refundOrder, generateOrderNo } from '@/api/finance-order'
 import { ORDER_TYPE, PAYMENT_METHOD, PAYMENT_STATUS } from '@/constants/dict'
 import { getDictLabel, formatCurrency } from '@/utils/format'
 import Pagination from '@/components/common/Pagination.vue'
@@ -42,7 +42,7 @@ onMounted(() => {
 const getList = async () => {
   loading.value = true
   try {
-    const res = await listFinanceOrder(queryParams)
+    const res = await pageFinanceOrder(queryParams)
     orderList.value = res.rows || []
     total.value = res.total || 0
   } catch (error) {

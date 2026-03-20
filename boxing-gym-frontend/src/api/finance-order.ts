@@ -1,5 +1,5 @@
 import request from '@/utils/request'
-import type { FinanceOrder, FinanceOrderQuery, FinanceOrderForm } from '@/types/finance'
+import type { FinanceOrder, FinanceOrderQuery, FinanceOrderForm, PageResult } from '@/types/finance'
 
 /** 支付方式映射表 */
 const PAYMENT_METHOD_MAP: Record<number, '0' | '1' | '2' | '3'> = {
@@ -66,6 +66,33 @@ const mapFinance = (item: any): FinanceOrder => ({
   remark: item.remark || '',
   createTime: item.createTime
 })
+
+/** 分页查询财务订单（服务端分页） */
+export async function pageFinanceOrder(query: FinanceOrderQuery): Promise<PageResult<FinanceOrder>> {
+  const params: Record<string, any> = {
+    current: query.pageNum || 1,
+    size: query.pageSize || 10
+  }
+  if (query.orderNo) {
+    params.orderNo = query.orderNo
+  }
+  if (query.orderType !== undefined && query.orderType !== '') {
+    params.type = toBackendOrderType(query.orderType)
+  }
+  if (query.memberNo) {
+    params.memberNo = query.memberNo
+  }
+  if (query.memberName) {
+    params.memberName = query.memberName
+  }
+  if (query.paymentStatus !== undefined && query.paymentStatus !== '') {
+    params.paymentStatus = Number(query.paymentStatus)
+  }
+
+  const response = await request.get<{ records: any[], total: number }>('/finance-order/page', { params })
+  const rows = (response.records || []).map(mapFinance)
+  return { rows, total: response.total }
+}
 
 /** 查询财务订单列表 */
 export async function listFinanceOrder(query: FinanceOrderQuery) {

@@ -1,15 +1,19 @@
 package com.boxinggym.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.boxinggym.common.Result;
 import com.boxinggym.dto.FinanceOrderDTO;
+import com.boxinggym.dto.FinanceOrderQueryDTO;
 import com.boxinggym.dto.OrderNoVO;
 import com.boxinggym.entity.FinanceOrder;
 import com.boxinggym.entity.Member;
 import com.boxinggym.service.FinanceOrderService;
 import com.boxinggym.service.MemberService;
 import com.boxinggym.utils.ResponseAssembler;
+import com.boxinggym.vo.FinanceOrderVO;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -38,6 +42,30 @@ public class FinanceOrderController {
 
     private final FinanceOrderService financeOrderService;
     private final MemberService memberService;
+
+    /**
+     * 分页查询财务订单
+     */
+    @Operation(summary = "分页查询财务订单")
+    @GetMapping("/page")
+    public Result<Page<FinanceOrderVO>> page(
+            @Parameter(description = "页码") @RequestParam(defaultValue = "1") Integer current,
+            @Parameter(description = "每页大小") @RequestParam(defaultValue = "10") Integer size,
+            @Parameter(description = "订单号") @RequestParam(required = false) String orderNo,
+            @Parameter(description = "订单类型") @RequestParam(required = false) Integer type,
+            @Parameter(description = "会员编号") @RequestParam(required = false) String memberNo,
+            @Parameter(description = "会员姓名") @RequestParam(required = false) String memberName,
+            @Parameter(description = "支付状态") @RequestParam(required = false) Integer paymentStatus) {
+        FinanceOrderQueryDTO query = new FinanceOrderQueryDTO();
+        query.setCurrent(current);
+        query.setSize(size);
+        query.setOrderNo(orderNo);
+        query.setType(type);
+        query.setMemberNo(memberNo);
+        query.setMemberName(memberName);
+        query.setPaymentStatus(paymentStatus);
+        return Result.success(financeOrderService.page(query));
+    }
 
     /**
      * 查询所有订单
