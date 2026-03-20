@@ -11,7 +11,6 @@ import java.time.LocalDateTime;
 public class CoachVO {
     private Long id;
     private Long userId;
-    private String coachNo;
     private String name;
     private Integer gender;
     private String phone;

@@ -20,7 +20,6 @@ const mapCoach = (item: any, userMap?: Record<number, any>): Coach => {
   const user = userMap?.[item.userId] || {}
   return {
     id: item.id,
-    coachNo: item.coachNo || `C${String(item.userId || item.id || 0).padStart(6, '0')}`,
     name: item.name || user.realName || '',
     gender: String(item.gender ?? 0) as '0' | '1',
     phone: item.phone || user.phone || '',
@@ -78,8 +77,11 @@ export async function getCoach(id: number) {
 
 /** 新增教练 */
 export async function addCoach(data: CoachForm) {
+  // 使用手机号作为用户名
+  const username = `coach_${data.phone || Date.now()}`
+
   await request.post('/sys-user', {
-    username: data.coachNo,
+    username: username,
     password: '123456',
     realName: data.name,
     role: 'ROLE_COACH',
@@ -90,7 +92,7 @@ export async function addCoach(data: CoachForm) {
   })
 
   const users = await request.get<any[]>('/sys-user/list')
-  const created = (users || []).find((u) => u.username === data.coachNo)
+  const created = (users || []).find((u) => u.username === username)
   if (!created?.id) {
     throw new Error('创建教练账号失败')
   }

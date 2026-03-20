@@ -83,12 +83,4 @@ public interface MembershipCardService {
      * @return 卡片实体
      */
     MembershipCard getById(Long id);
-
-    /**
-     * 根据卡编码获取卡片
-     *
-     * @param cardCode 卡编码
-     * @return 卡片实体
-     */
-    MembershipCard getByCardCode(String cardCode);
 }

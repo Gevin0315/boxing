@@ -16,7 +16,6 @@ public class FinanceOrderDTO {
     private String orderNo;
     private Integer type;        // 1-充值 2-退款 3-课程消费
     private Long memberId;
-    private String memberNo;      // 会员编号
     private String memberName;    // 会员姓名
     private Long courseId;
     private String courseName;    // 课程名称

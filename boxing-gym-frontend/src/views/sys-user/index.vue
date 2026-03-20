@@ -47,6 +47,10 @@ const getList = async () => {
     userList.value = res.rows || []
     total.value = res.total || 0
   } catch (error) {
+    // 忽略请求被取消的情况
+    if (error?.name === 'CanceledError' || error?.code === 'ERR_CANCELED') {
+      return
+    }
     console.error('Failed to get user list:', error)
   } finally {
     loading.value = false

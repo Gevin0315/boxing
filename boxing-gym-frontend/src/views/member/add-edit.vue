@@ -23,7 +23,6 @@ const loading = ref(false)
 
 const form = reactive<MemberForm>({
   id: undefined,
-  memberNo: '',
   name: '',
   gender: '0',
   phone: '',
@@ -60,7 +59,6 @@ watch(() => props.modelValue, async (val) => {
 
 const resetForm = () => {
   form.id = undefined
-  form.memberNo = ''
   form.name = ''
   form.gender = '0'
   form.phone = ''
@@ -99,8 +97,8 @@ const handleSubmit = async () => {
       await updateMember(form)
       ElMessage.success('修改成功')
     } else {
-      const res = await addMember(form)
-      ElMessage.success('新增成功，会员号: ' + (res.data?.memberNo || ''))
+      await addMember(form)
+      ElMessage.success('新增成功')
     }
 
     handleClose()
@@ -134,20 +132,7 @@ const handleClose = () => {
       label-width="100px"
       v-loading="loading"
     >
-      <!-- 新增时显示会员号（只读，由后端生成） -->
-      <el-row v-if="memberId" :gutter="20">
-        <el-col :span="12">
-          <el-form-item label="会员号">
-            <el-input v-model="form.memberNo" disabled />
-          </el-form-item>
-        </el-col>
-        <el-col :span="12">
-          <el-form-item label="姓名" prop="name">
-            <el-input v-model="form.name" placeholder="请输入姓名" />
-          </el-form-item>
-        </el-col>
-      </el-row>
-      <el-row v-else :gutter="20">
+      <el-row :gutter="20">
         <el-col :span="12">
           <el-form-item label="姓名" prop="name">
             <el-input v-model="form.name" placeholder="请输入姓名" />
@@ -167,27 +152,7 @@ const handleClose = () => {
           </el-form-item>
         </el-col>
       </el-row>
-      <el-row v-if="memberId" :gutter="20">
-        <el-col :span="12">
-          <el-form-item label="性别" prop="gender">
-            <el-radio-group v-model="form.gender">
-              <el-radio
-                v-for="item in GENDER"
-                :key="item.value"
-                :label="item.value"
-              >
-                {{ item.label }}
-              </el-radio>
-            </el-radio-group>
-          </el-form-item>
-        </el-col>
-        <el-col :span="12">
-          <el-form-item label="手机号" prop="phone">
-            <el-input v-model="form.phone" placeholder="请输入手机号" />
-          </el-form-item>
-        </el-col>
-      </el-row>
-      <el-row v-else :gutter="20">
+      <el-row :gutter="20">
         <el-col :span="12">
           <el-form-item label="手机号" prop="phone">
             <el-input v-model="form.phone" placeholder="请输入手机号" />
@@ -205,25 +170,7 @@ const handleClose = () => {
           </el-form-item>
         </el-col>
       </el-row>
-      <el-row v-if="memberId" :gutter="20">
-        <el-col :span="12">
-          <el-form-item label="生日">
-            <el-date-picker
-              v-model="form.birthday"
-              type="date"
-              placeholder="请选择生日"
-              value-format="YYYY-MM-DD"
-              style="width: 100%"
-            />
-          </el-form-item>
-        </el-col>
-        <el-col :span="12">
-          <el-form-item label="身份证号">
-            <el-input v-model="form.idCard" placeholder="请输入身份证号" />
-          </el-form-item>
-        </el-col>
-      </el-row>
-      <el-row v-else :gutter="20">
+      <el-row :gutter="20">
         <el-col :span="12">
           <el-form-item label="身份证号">
             <el-input v-model="form.idCard" placeholder="请输入身份证号" />
@@ -235,9 +182,6 @@ const handleClose = () => {
           </el-form-item>
         </el-col>
       </el-row>
-      <el-form-item v-if="memberId" label="地址">
-        <el-input v-model="form.address" placeholder="请输入地址" />
-      </el-form-item>
       <el-row :gutter="20">
         <el-col :span="12">
           <el-form-item label="紧急联系人">

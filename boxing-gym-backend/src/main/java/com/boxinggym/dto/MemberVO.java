@@ -24,9 +24,6 @@ public class MemberVO {
     @Schema(description = "会员ID")
     private Long id;
 
-    @Schema(description = "会员编号")
-    private String memberNo;
-
     @Schema(description = "会员姓名")
     private String name;
 

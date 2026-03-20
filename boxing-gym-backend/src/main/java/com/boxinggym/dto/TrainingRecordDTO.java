@@ -14,7 +14,6 @@ public class TrainingRecordDTO {
     private Long id;
     private String recordNo;
     private Long memberId;
-    private String memberNo;      // 会员编号
     private String memberName;    // 会员姓名
     private Long scheduleId;
     private Long coachId;

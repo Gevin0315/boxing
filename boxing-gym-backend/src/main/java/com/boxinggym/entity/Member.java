@@ -28,11 +28,6 @@ public class Member extends BaseEntity {
     private Long id;
 
     /**
-     * 会员编号（如: M000001）
-     */
-    private String memberNo;
-
-    /**
      * 会员姓名
      */
     private String name;

@@ -23,7 +23,6 @@ const loading = ref(false)
 
 const form = reactive<CoachForm>({
   id: undefined,
-  coachNo: '',
   name: '',
   gender: '0',
   phone: '',
@@ -61,7 +60,6 @@ watch(() => props.modelValue, async (val) => {
 
 const resetForm = () => {
   form.id = undefined
-  form.coachNo = ''
   form.name = ''
   form.gender = '0'
   form.phone = ''
@@ -135,20 +133,7 @@ const handleClose = () => {
       label-width="100px"
       v-loading="loading"
     >
-      <!-- 编辑时显示教练号（只读） -->
-      <el-row v-if="coachId" :gutter="20">
-        <el-col :span="12">
-          <el-form-item label="教练号">
-            <el-input v-model="form.coachNo" disabled />
-          </el-form-item>
-        </el-col>
-        <el-col :span="12">
-          <el-form-item label="姓名" prop="name">
-            <el-input v-model="form.name" placeholder="请输入姓名" />
-          </el-form-item>
-        </el-col>
-      </el-row>
-      <el-row v-else :gutter="20">
+      <el-row :gutter="20">
         <el-col :span="12">
           <el-form-item label="姓名" prop="name">
             <el-input v-model="form.name" placeholder="请输入姓名" />
@@ -168,27 +153,7 @@ const handleClose = () => {
           </el-form-item>
         </el-col>
       </el-row>
-      <el-row v-if="coachId" :gutter="20">
-        <el-col :span="12">
-          <el-form-item label="性别" prop="gender">
-            <el-radio-group v-model="form.gender">
-              <el-radio
-                v-for="item in GENDER"
-                :key="item.value"
-                :label="item.value"
-              >
-                {{ item.label }}
-              </el-radio>
-            </el-radio-group>
-          </el-form-item>
-        </el-col>
-        <el-col :span="12">
-          <el-form-item label="手机号" prop="phone">
-            <el-input v-model="form.phone" placeholder="请输入手机号" />
-          </el-form-item>
-        </el-col>
-      </el-row>
-      <el-row v-else :gutter="20">
+      <el-row :gutter="20">
         <el-col :span="12">
           <el-form-item label="手机号" prop="phone">
             <el-input v-model="form.phone" placeholder="请输入手机号" />
@@ -200,19 +165,7 @@ const handleClose = () => {
           </el-form-item>
         </el-col>
       </el-row>
-      <el-row v-if="coachId" :gutter="20">
-        <el-col :span="12">
-          <el-form-item label="邮箱">
-            <el-input v-model="form.email" placeholder="请输入邮箱" />
-          </el-form-item>
-        </el-col>
-        <el-col :span="12">
-          <el-form-item label="身份证号">
-            <el-input v-model="form.idCard" placeholder="请输入身份证号" />
-          </el-form-item>
-        </el-col>
-      </el-row>
-      <el-row v-else :gutter="20">
+      <el-row :gutter="20">
         <el-col :span="12">
           <el-form-item label="身份证号">
             <el-input v-model="form.idCard" placeholder="请输入身份证号" />
@@ -231,17 +184,6 @@ const handleClose = () => {
         </el-col>
       </el-row>
       <el-row :gutter="20">
-        <el-col v-if="coachId" :span="12">
-          <el-form-item label="生日">
-            <el-date-picker
-              v-model="form.birthday"
-              type="date"
-              placeholder="请选择生日"
-              value-format="YYYY-MM-DD"
-              style="width: 100%"
-            />
-          </el-form-item>
-        </el-col>
         <el-col :span="12">
           <el-form-item label="入职日期">
             <el-date-picker

@@ -3,7 +3,6 @@ import { PageQuery, PageResult } from './common'
 /** 教练信息 */
 export interface Coach {
   id?: number
-  coachNo: string
   name: string
   gender: '0' | '1' // 0-男 1-女
   phone: string
@@ -23,7 +22,6 @@ export interface Coach {
 
 /** 教练查询参数 */
 export interface CoachQuery extends PageQuery {
-  coachNo?: string
   name?: string
   phone?: string
   specialties?: string
@@ -34,7 +32,6 @@ export interface CoachQuery extends PageQuery {
 /** 教练表单 */
 export interface CoachForm {
   id?: number
-  coachNo?: string
   name: string
   gender: '0' | '1'
   phone: string

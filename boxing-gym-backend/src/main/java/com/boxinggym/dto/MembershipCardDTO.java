@@ -15,10 +15,6 @@ import java.math.BigDecimal;
 @Schema(description = "会员卡定义DTO")
 public class MembershipCardDTO {
 
-    @Schema(description = "卡编码")
-    @NotBlank(message = "卡编码不能为空")
-    private String cardCode;
-
     @Schema(description = "卡名称")
     @NotBlank(message = "卡名称不能为空")
     private String cardName;

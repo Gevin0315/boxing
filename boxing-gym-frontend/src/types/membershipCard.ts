@@ -90,7 +90,6 @@ export const CARD_STATUS_MAP: Record<number, string> = {
 /** 会员卡定义接口 */
 export interface MembershipCard {
   id: number
-  cardCode: string
   cardName: string
   cardCategory: CardCategory
   cardCategoryDesc: string
@@ -113,7 +112,6 @@ export interface MembershipCard {
 /** 会员卡定义表单 */
 export interface MembershipCardForm {
   id?: number
-  cardCode: string
   cardName: string
   cardCategory: CardCategory
   cardType: CardType

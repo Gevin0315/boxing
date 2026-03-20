@@ -16,7 +16,6 @@ const total = ref(0)
 const queryParams = reactive<CoachQuery>({
   pageNum: 1,
   pageSize: 10,
-  coachNo: '',
   name: '',
   phone: '',
   specialties: '',
@@ -54,7 +53,6 @@ const handleReset = () => {
   Object.assign(queryParams, {
     pageNum: 1,
     pageSize: 10,
-    coachNo: '',
     name: '',
     phone: '',
     specialties: '',
@@ -117,9 +115,6 @@ const handlePageChange = (page: number, pageSize: number) => {
   <div class="page-container">
     <!-- 搜索表单 -->
     <el-form :model="queryParams" inline class="search-form">
-      <el-form-item label="教练号">
-        <el-input v-model="queryParams.coachNo" placeholder="请输入教练号" clearable @keyup.enter="handleSearch" />
-      </el-form-item>
       <el-form-item label="姓名">
         <el-input v-model="queryParams.name" placeholder="请输入姓名" clearable @keyup.enter="handleSearch" />
       </el-form-item>
@@ -163,7 +158,6 @@ const handlePageChange = (page: number, pageSize: number) => {
     <!-- 数据表格 -->
     <el-table v-loading="loading" :data="coachList" stripe border>
       <el-table-column type="index" label="序号" width="60" align="center" />
-      <el-table-column prop="coachNo" label="教练号" width="120" />
       <el-table-column label="头像" width="80" align="center">
         <template #default="{ row }">
           <el-avatar v-if="row.imageUrl" :src="row.imageUrl" :size="40" />

@@ -23,9 +23,6 @@ public class FinanceOrderVO {
     @Schema(description = "会员ID")
     private Long memberId;
 
-    @Schema(description = "会员编号")
-    private String memberNo;
-
     @Schema(description = "会员姓名")
     private String memberName;
 

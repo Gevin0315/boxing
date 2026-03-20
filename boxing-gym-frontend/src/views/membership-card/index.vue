@@ -168,7 +168,6 @@ const handleDialogClose = () => {
 
     <!-- 数据表格 -->
     <el-table :data="cardList" v-loading="loading" border stripe style="width: 100%">
-      <el-table-column prop="cardCode" label="卡编码" width="140" />
       <el-table-column prop="cardName" label="卡名称" min-width="120" />
       <el-table-column prop="cardCategoryDesc" label="卡分类" width="110" />
       <el-table-column prop="cardTypeDesc" label="卡类型" width="110" />

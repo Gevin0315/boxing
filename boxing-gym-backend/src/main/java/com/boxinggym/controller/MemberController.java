@@ -42,15 +42,11 @@ public class MemberController {
     public Result<Page<Member>> page(
             @RequestParam(defaultValue = "1") Integer current,
             @RequestParam(defaultValue = "10") Integer size,
-            @RequestParam(required = false) String memberNo,
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String phone,
             @RequestParam(required = false) Integer status) {
         Page<Member> page = new Page<>(current, size);
         LambdaQueryWrapper<Member> wrapper = new LambdaQueryWrapper<>();
-        if (memberNo != null && !memberNo.isEmpty()) {
-            wrapper.like(Member::getMemberNo, memberNo);
-        }
         if (name != null && !name.isEmpty()) {
             wrapper.like(Member::getName, name);
         }
@@ -97,13 +93,11 @@ public class MemberController {
     }
 
     /**
-     * 新增会员（自动生成会员号）
+     * 新增会员
      */
     @Operation(summary = "新增会员")
     @PostMapping
     public Result<Member> add(@RequestBody Member member) {
-        // 自动生成会员号
-        member.setMemberNo(generateMemberNo());
         boolean success = memberService.save(member);
         return success ? Result.success(member) : Result.fail("新增失败");
     }
@@ -226,26 +220,6 @@ public class MemberController {
                 .set(Member::getStatus, status)
                 .update();
         return success ? Result.success("状态修改成功") : Result.fail("状态修改失败");
-    }
-
-    /**
-     * 生成会员号（基于当前最大会员号+1）
-     */
-    private String generateMemberNo() {
-        Member maxMember = memberService.lambdaQuery()
-                .select(Member::getMemberNo)
-                .orderByDesc(Member::getMemberNo)
-                .last("LIMIT 1")
-                .one();
-
-        long nextNo = 1;
-        if (maxMember != null && maxMember.getMemberNo() != null) {
-            String maxNo = maxMember.getMemberNo();
-            if (maxNo.startsWith("M")) {
-                nextNo = Long.parseLong(maxNo.substring(1)) + 1;
-            }
-        }
-        return "M" + String.format("%06d", nextNo);
     }
 
     /**

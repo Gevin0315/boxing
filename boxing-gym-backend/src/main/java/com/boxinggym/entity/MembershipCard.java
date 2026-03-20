@@ -27,11 +27,6 @@ public class MembershipCard implements Serializable {
     private Long id;
 
     /**
-     * 卡编码
-     */
-    private String cardCode;
-
-    /**
      * 卡名称
      */
     private String cardName;

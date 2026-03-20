@@ -53,7 +53,6 @@ public class FinanceOrderController {
             @Parameter(description = "每页大小") @RequestParam(defaultValue = "10") Integer size,
             @Parameter(description = "订单号") @RequestParam(required = false) String orderNo,
             @Parameter(description = "订单类型") @RequestParam(required = false) Integer type,
-            @Parameter(description = "会员编号") @RequestParam(required = false) String memberNo,
             @Parameter(description = "会员姓名") @RequestParam(required = false) String memberName,
             @Parameter(description = "支付状态") @RequestParam(required = false) Integer paymentStatus) {
         FinanceOrderQueryDTO query = new FinanceOrderQueryDTO();
@@ -61,7 +60,7 @@ public class FinanceOrderController {
         query.setSize(size);
         query.setOrderNo(orderNo);
         query.setType(type);
-        query.setMemberNo(memberNo);
+        query.setMemberName(memberName);
         query.setMemberName(memberName);
         query.setPaymentStatus(paymentStatus);
         return Result.success(financeOrderService.page(query));

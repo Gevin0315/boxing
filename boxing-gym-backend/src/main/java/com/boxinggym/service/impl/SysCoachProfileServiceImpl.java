@@ -95,7 +95,6 @@ public class SysCoachProfileServiceImpl extends ServiceImpl<SysCoachProfileMappe
         CoachVO vo = new CoachVO();
         vo.setId(profile.getId());
         vo.setUserId(profile.getUserId());
-        vo.setCoachNo(profile.getUserId() != null ? String.format("C%06d", profile.getUserId()) : "");
         vo.setGender(profile.getGender());
         vo.setPhone(profile.getPhone());
         vo.setEmail(profile.getEmail());

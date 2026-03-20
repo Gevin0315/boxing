@@ -173,8 +173,8 @@ const handlePageChange = (page: number, pageSize: number) => {
           />
         </el-select>
       </el-form-item>
-      <el-form-item label="会员号">
-        <el-input v-model="queryParams.memberNo" placeholder="请输入会员号" clearable @keyup.enter="handleSearch" />
+      <el-form-item label="会员姓名">
+        <el-input v-model="queryParams.memberName" placeholder="请输入会员姓名" clearable @keyup.enter="handleSearch" />
       </el-form-item>
       <el-form-item label="会员姓名">
         <el-input v-model="queryParams.memberName" placeholder="请输入会员姓名" clearable @keyup.enter="handleSearch" />
@@ -223,7 +223,6 @@ const handlePageChange = (page: number, pageSize: number) => {
           {{ getDictLabel(ORDER_TYPE, row.orderType) }}
         </template>
       </el-table-column>
-      <el-table-column prop="memberNo" label="会员号" width="120" />
       <el-table-column prop="memberName" label="会员姓名" width="120" />
       <el-table-column prop="courseName" label="课程" width="150" show-overflow-tooltip />
       <el-table-column prop="amount" label="订单金额" width="120">

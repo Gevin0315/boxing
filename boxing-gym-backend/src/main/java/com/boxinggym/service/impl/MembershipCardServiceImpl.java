@@ -82,10 +82,6 @@ public class MembershipCardServiceImpl extends ServiceImpl<MembershipCardMapper,
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Long create(MembershipCardDTO dto) {
-        // 检查卡编码是否已存在
-        if (getByCardCode(dto.getCardCode()) != null) {
-            throw new BusinessException("卡编码已存在: " + dto.getCardCode());
-        }
         MembershipCard card = new MembershipCard();
         BeanUtils.copyProperties(dto, card);
         card.setCreateTime(LocalDateTime.now());
@@ -106,12 +102,6 @@ public class MembershipCardServiceImpl extends ServiceImpl<MembershipCardMapper,
         MembershipCard card = getById(id);
         if (card == null) {
             throw new BusinessException("卡片不存在");
-        }
-        // 如果修改了卡编码，检查是否已存在
-        if (!card.getCardCode().equals(dto.getCardCode())) {
-            if (getByCardCode(dto.getCardCode()) != null) {
-                throw new BusinessException("卡编码已存在: " + dto.getCardCode());
-            }
         }
         BeanUtils.copyProperties(dto, card);
         card.setId(id);
@@ -144,13 +134,6 @@ public class MembershipCardServiceImpl extends ServiceImpl<MembershipCardMapper,
     @Override
     public MembershipCard getById(Long id) {
         return super.getById(id);
-    }
-
-    @Override
-    public MembershipCard getByCardCode(String cardCode) {
-        LambdaQueryWrapper<MembershipCard> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(MembershipCard::getCardCode, cardCode);
-        return getOne(wrapper);
     }
 
     /**

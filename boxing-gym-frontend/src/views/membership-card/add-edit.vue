@@ -29,7 +29,6 @@ const formRef = ref()
 
 const getDefaultForm = (): MembershipCardForm => ({
   id: undefined,
-  cardCode: '',
   cardName: '',
   cardCategory: CardCategory.GROUP_TIME,
   cardType: 'MONTHLY',
@@ -47,9 +46,6 @@ const getDefaultForm = (): MembershipCardForm => ({
 const form = reactive<MembershipCardForm>(getDefaultForm())
 
 const rules = {
-  cardCode: [
-    { required: true, message: '请输入卡编码', trigger: 'blur' },
-  ],
   cardName: [
     { required: true, message: '请输入卡名称', trigger: 'blur' },
   ],
@@ -201,11 +197,6 @@ const handleClose = () => {
   >
     <el-form ref="formRef" :model="form" :rules="rules" label-width="120px">
       <el-row :gutter="20">
-        <el-col :span="12">
-          <el-form-item label="卡编码" prop="cardCode">
-            <el-input v-model="form.cardCode" placeholder="请输入卡编码" />
-          </el-form-item>
-        </el-col>
         <el-col :span="12">
           <el-form-item label="卡名称" prop="cardName">
             <el-input v-model="form.cardName" placeholder="请输入卡名称" />

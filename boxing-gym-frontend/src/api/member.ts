@@ -18,7 +18,6 @@ const toBackendStatus = (status?: string | number): number => {
 
 const mapMember = (item: any): Member => ({
   id: item.id,
-  memberNo: item.memberNo || '',
   name: item.name || '',
   gender: String(item.gender ?? 0) as '0' | '1',
   phone: item.phone || '',
@@ -38,7 +37,6 @@ const mapMember = (item: any): Member => ({
 
 const toBackendMember = (data: MemberForm) => ({
   id: data.id,
-  memberNo: data.memberNo,
   name: data.name,
   gender: Number(data.gender),
   phone: data.phone,
@@ -60,7 +58,6 @@ export async function listMember(query: MemberQuery) {
     params: {
       current: query.pageNum || 1,
       size: query.pageSize || 10,
-      memberNo: query.memberNo || undefined,
       name: query.name || undefined,
       phone: query.phone || undefined,
       status: query.status !== undefined && query.status !== null && query.status !== ''

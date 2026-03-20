@@ -27,7 +27,6 @@ const total = ref(0)
 const queryParams = reactive<MemberQuery>({
   pageNum: 1,
   pageSize: 10,
-  memberNo: '',
   name: '',
   phone: '',
   status: ''
@@ -79,7 +78,6 @@ const handleReset = () => {
   Object.assign(queryParams, {
     pageNum: 1,
     pageSize: 10,
-    memberNo: '',
     name: '',
     phone: '',
     status: ''
@@ -271,9 +269,6 @@ const handleViewRecords = async (card: MemberCard) => {
   <div class="page-container">
     <!-- 搜索表单 -->
     <el-form :model="queryParams" inline class="search-form">
-      <el-form-item label="会员号">
-        <el-input v-model="queryParams.memberNo" placeholder="请输入会员号" clearable @keyup.enter="handleSearch" />
-      </el-form-item>
       <el-form-item label="姓名">
         <el-input v-model="queryParams.name" placeholder="请输入姓名" clearable @keyup.enter="handleSearch" />
       </el-form-item>
@@ -395,7 +390,6 @@ const handleViewRecords = async (card: MemberCard) => {
         </template>
       </el-table-column>
       <el-table-column type="index" label="序号" width="60" align="center" />
-      <el-table-column prop="memberNo" label="会员号" width="120" />
       <el-table-column prop="name" label="姓名" min-width="100" />
       <el-table-column prop="gender" label="性别" width="80">
         <template #default="{ row }">
