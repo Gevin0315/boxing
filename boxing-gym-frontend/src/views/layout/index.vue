@@ -15,7 +15,6 @@ const menuList = [
   { path: '/sys-user', title: '系统用户', icon: 'User' },
   { path: '/member', title: '会员管理', icon: 'UserFilled' },
   { path: '/membership-card', title: '会员卡管理', icon: 'Postcard' },
-  { path: '/member-card', title: '会员持卡', icon: 'CreditCard' },
   { path: '/course', title: '课程管理', icon: 'Reading' },
   { path: '/schedule', title: '排课管理', icon: 'Calendar' },
   { path: '/coach', title: '教练管理', icon: 'Avatar' },

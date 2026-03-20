@@ -12,7 +12,7 @@ import type {
 } from '@/types/memberCard'
 import type { ApiResponse, PageResult } from '@/types/common'
 
-const BASE_URL = '/api/member-card'
+const BASE_URL = '/member-card'
 
 /** 购买会员卡 */
 export function purchaseCard(data: PurchaseCardDTO) {
