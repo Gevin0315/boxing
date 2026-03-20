@@ -1,12 +1,15 @@
 package com.boxinggym.controller;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.boxinggym.common.BusinessException;
 import com.boxinggym.common.Result;
+import com.boxinggym.dto.CoachQueryDTO;
 import com.boxinggym.entity.SysCoachProfile;
 import com.boxinggym.entity.SysUser;
 import com.boxinggym.service.SysCoachProfileService;
 import com.boxinggym.service.SysUserService;
 import com.boxinggym.utils.SecurityUtil;
+import com.boxinggym.vo.CoachVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +33,16 @@ public class SysCoachProfileController {
 
     private final SysCoachProfileService sysCoachProfileService;
     private final SysUserService sysUserService;
+
+    /**
+     * 分页查询教练
+     */
+    @Operation(summary = "分页查询教练")
+    @GetMapping("/page")
+    @PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_RECEPTION')")
+    public Result<Page<CoachVO>> page(CoachQueryDTO query) {
+        return Result.success(sysCoachProfileService.page(query));
+    }
 
     /**
      * 查询所有教练信息

@@ -16,19 +16,19 @@ const toBackendStatus = (status?: string | number): number => {
   return 0                 // 前端'2'离职 -> 后端0禁用
 }
 
-const mapCoach = (item: any, userMap: Record<number, any>): Coach => {
-  const user = userMap[item.userId] || {}
+const mapCoach = (item: any, userMap?: Record<number, any>): Coach => {
+  const user = userMap?.[item.userId] || {}
   return {
     id: item.id,
-    coachNo: `C${String(item.userId || item.id || 0).padStart(6, '0')}`,
-    name: user.realName || '',
+    coachNo: item.coachNo || `C${String(item.userId || item.id || 0).padStart(6, '0')}`,
+    name: item.name || user.realName || '',
     gender: String(item.gender ?? 0) as '0' | '1',
     phone: item.phone || user.phone || '',
-    specialties: item.specialty || '',
+    specialties: item.specialties || item.specialty || '',
     level: String(item.level ?? 1) as '1' | '2' | '3' | '4',
-    status: toFrontendStatus(user.status) as '0' | '1' | '2',
-    imageUrl: item.imgUrl || '',
-    description: item.intro || '',
+    status: toFrontendStatus(item.status ?? user.status) as '0' | '1' | '2',
+    imageUrl: item.imageUrl || item.imgUrl || '',
+    description: item.description || item.intro || '',
     email: item.email || user.email || '',
     birthday: item.birthday || '',
     address: item.address || '',
@@ -46,28 +46,25 @@ async function getUserMap() {
   }, {})
 }
 
-/** 查询教练列表 */
+/** 查询教练分页列表 */
+export async function pageCoach(query: CoachQuery) {
+  const params: Record<string, any> = {
+    current: query.pageNum || 1,
+    size: query.pageSize || 10
+  }
+  if (query.name) params.name = query.name
+  if (query.status) params.status = toBackendStatus(query.status)
+
+  const data = await request.get<{ records: any[]; total: number; current: number; size: number }>('/coach-profile/page', { params })
+  return {
+    rows: data.records.map(mapCoach),
+    total: data.total
+  }
+}
+
+/** 查询教练列表（改为调用分页接口）*/
 export async function listCoach(query: CoachQuery) {
-  const [profiles, userMap] = await Promise.all([
-    request.get<any[]>('/coach-profile/list'),
-    getUserMap()
-  ])
-
-  let rows = (profiles || []).map((item) => mapCoach(item, userMap))
-
-  if (query.name) {
-    rows = rows.filter((c) => c.name.includes(query.name!))
-  }
-  if (query.status) {
-    rows = rows.filter((c) => c.status === query.status)
-  }
-
-  const total = rows.length
-  const pageNum = query.pageNum || 1
-  const pageSize = query.pageSize || 10
-  const start = (pageNum - 1) * pageSize
-  rows = rows.slice(start, start + pageSize)
-  return { rows, total }
+  return pageCoach(query)
 }
 
 /** 查询教练详情 */
