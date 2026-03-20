@@ -4,7 +4,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search, Refresh, Edit, Delete, Coin, Wallet, CreditCard, View } from '@element-plus/icons-vue'
 import { listMember, delMember, updateMemberStatus, memberRecharge, memberDeduct } from '@/api/member'
 import { getMemberCards, activateCard, voidCard, getCardUsageRecords } from '@/api/memberCard'
-import { MEMBER_STATUS, MEMBERSHIP_LEVEL, GENDER } from '@/constants/dict'
+import { MEMBER_STATUS, GENDER } from '@/constants/dict'
 import {
   MemberCardStatus,
   MEMBER_CARD_STATUS_MAP,
@@ -30,8 +30,7 @@ const queryParams = reactive<MemberQuery>({
   memberNo: '',
   name: '',
   phone: '',
-  status: '',
-  membershipLevel: ''
+  status: ''
 })
 
 const dialogVisible = ref(false)
@@ -83,8 +82,7 @@ const handleReset = () => {
     memberNo: '',
     name: '',
     phone: '',
-    status: '',
-    membershipLevel: ''
+    status: ''
   })
   getList()
 }
@@ -283,19 +281,9 @@ const handleViewRecords = async (card: MemberCard) => {
         <el-input v-model="queryParams.phone" placeholder="请输入手机号" clearable @keyup.enter="handleSearch" />
       </el-form-item>
       <el-form-item label="状态">
-        <el-select v-model="queryParams.status" placeholder="请选择状态" clearable>
+        <el-select v-model="queryParams.status" placeholder="请选择状态" clearable style="width: 120px" @change="handleSearch">
           <el-option
             v-for="item in MEMBER_STATUS"
-            :key="item.value"
-            :label="item.label"
-            :value="item.value"
-          />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="会员等级">
-        <el-select v-model="queryParams.membershipLevel" placeholder="请选择会员等级" clearable>
-          <el-option
-            v-for="item in MEMBERSHIP_LEVEL"
             :key="item.value"
             :label="item.label"
             :value="item.value"
@@ -415,12 +403,6 @@ const handleViewRecords = async (card: MemberCard) => {
         </template>
       </el-table-column>
       <el-table-column prop="phone" label="手机号" width="120" />
-      <el-table-column prop="membershipLevel" label="会员等级" width="100">
-        <template #default="{ row }">
-          {{ getDictLabel(MEMBERSHIP_LEVEL, row.membershipLevel) }}
-        </template>
-      </el-table-column>
-      <el-table-column prop="expiryDate" label="到期日期" width="120" />
       <el-table-column prop="remainingBalance" label="余额" width="120">
         <template #default="{ row }">
           {{ formatCurrency(row.remainingBalance || 0) }}

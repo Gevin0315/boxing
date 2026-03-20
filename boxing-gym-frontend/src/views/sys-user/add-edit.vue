@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { ref, reactive, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import { addSysUser, updateSysUser, getSysUser } from '@/api/sys-user'
-import { USER_STATUS, USER_ROLE } from '@/constants/dict'
+import { addSysUser, updateSysUser, getSysUser, getRoleList } from '@/api/sys-user'
+import { USER_STATUS } from '@/constants/dict'
 import { required, usernameRule, passwordRule, phoneRule, emailRule } from '@/utils/validate'
-import type { SysUserForm } from '@/types/sys-user'
+import type { SysUserForm, RoleOption } from '@/types/sys-user'
 
 interface Props {
   modelValue: boolean
@@ -20,6 +20,7 @@ const emit = defineEmits<{
 
 const formRef = ref()
 const loading = ref(false)
+const roleOptions = ref<RoleOption[]>([])
 
 const form = reactive<SysUserForm>({
   id: undefined,
@@ -28,14 +29,14 @@ const form = reactive<SysUserForm>({
   password: '',
   phone: '',
   email: '',
-  status: '0',
+  status: 1,
   role: '',
   remark: ''
 })
 
 const rules = {
   username: [required('请输入用户名'), usernameRule],
-  nickname: [required('请输入昵称')],
+  nickname: [required('请输入姓名')],
   password: [
     {
       validator: (rule: any, value: string, callback: any) => {
@@ -59,11 +60,20 @@ const rules = {
 watch(() => props.modelValue, (val) => {
   if (val) {
     resetForm()
+    loadRoleOptions()
     if (props.userId) {
       loadUserDetail()
     }
   }
 })
+
+const loadRoleOptions = async () => {
+  try {
+    roleOptions.value = await getRoleList()
+  } catch (error) {
+    console.error('Failed to load role options:', error)
+  }
+}
 
 const resetForm = () => {
   form.id = undefined
@@ -72,7 +82,7 @@ const resetForm = () => {
   form.password = ''
   form.phone = ''
   form.email = ''
-  form.status = '0'
+  form.status = 1
   form.role = ''
   form.remark = ''
   formRef.value?.clearValidate()
@@ -138,8 +148,8 @@ const handleClose = () => {
       <el-form-item label="用户名" prop="username">
         <el-input v-model="form.username" placeholder="请输入用户名" :disabled="!!userId" />
       </el-form-item>
-      <el-form-item label="昵称" prop="nickname">
-        <el-input v-model="form.nickname" placeholder="请输入昵称" />
+      <el-form-item label="姓名" prop="nickname">
+        <el-input v-model="form.nickname" placeholder="请输入姓名" />
       </el-form-item>
       <el-form-item v-if="!userId" label="密码" prop="password">
         <el-input v-model="form.password" type="password" placeholder="请输入密码" show-password />
@@ -155,7 +165,7 @@ const handleClose = () => {
           <el-radio
             v-for="item in USER_STATUS"
             :key="item.value"
-            :label="item.value"
+            :label="Number(item.value)"
           >
             {{ item.label }}
           </el-radio>
@@ -164,7 +174,7 @@ const handleClose = () => {
       <el-form-item label="角色" prop="role">
         <el-select v-model="form.role" placeholder="请选择角色" style="width: 100%">
           <el-option
-            v-for="item in USER_ROLE"
+            v-for="item in roleOptions"
             :key="item.value"
             :label="item.label"
             :value="item.value"

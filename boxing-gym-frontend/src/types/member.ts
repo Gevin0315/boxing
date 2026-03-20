@@ -12,7 +12,7 @@ export interface Member {
   address?: string
   emergencyContact?: string
   emergencyPhone?: string
-  status: '0' | '1' | '2' // 0-正常 1-暂停 2-注销
+  status: '0' | '1' | '2' // 0-禁用 1-正常
   membershipLevel: string
   expiryDate?: string
   remainingBalance?: number

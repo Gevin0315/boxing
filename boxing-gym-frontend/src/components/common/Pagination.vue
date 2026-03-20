@@ -27,14 +27,6 @@ const currentPageSize = computed({
   get: () => props.pageSize,
   set: (val) => emit('update', 1, val)
 })
-
-const handleCurrentChange = (page: number) => {
-  currentPage.value = page
-}
-
-const handleSizeChange = (size: number) => {
-  currentPageSize.value = size
-}
 </script>
 
 <template>
@@ -46,8 +38,6 @@ const handleSizeChange = (size: number) => {
       :total="total"
       layout="total, sizes, prev, pager, next, jumper"
       background
-      @current-change="handleCurrentChange"
-      @size-change="handleSizeChange"
     />
   </div>
 </template>

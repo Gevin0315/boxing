@@ -1,29 +1,13 @@
 import request from '@/utils/request'
-import type { SysUser, SysUserQuery, SysUserForm } from '@/types/sys-user'
-
-/** 状态转换：支持三种状态：'0'正常、'1'禁用、'2'锁定 */
-const toFrontendStatus = (status?: number | string): '0' | '1' | '2' => {
-  const num = Number(status)
-  if (num === 0) return '0'
-  if (num === 1) return '1'
-  if (num === 2) return '2'
-  return '1' // 默认禁用
-}
-
-const toBackendStatus = (status?: string | number): number => {
-  const str = String(status)
-  if (str === '0') return 0
-  if (str === '1') return 1
-  if (str === '2') return 2
-  return 1 // 默认禁用
-}
+import type { SysUser, SysUserQuery, SysUserForm, RoleOption } from '@/types/sys-user'
 
 const mapSysUser = (item: any): SysUser => ({
   id: item.id,
   username: item.username || '',
   nickname: item.realName || '',
-  status: toFrontendStatus(item.status),
+  status: item.status,
   role: item.role || '',
+  roleDescription: item.roleDescription || '',
   phone: item.phone || '',
   email: item.email || '',
   remark: item.remark || '',
@@ -71,7 +55,7 @@ export function addSysUser(data: SysUserForm) {
     password: data.password,
     realName: data.nickname,
     role: data.role,
-    status: toBackendStatus(data.status),
+    status: data.status,
     phone: data.phone || '',
     email: data.email || '',
     remark: data.remark || ''
@@ -85,7 +69,7 @@ export function updateSysUser(data: SysUserForm) {
     password: data.password,
     realName: data.nickname,
     role: data.role,
-    status: toBackendStatus(data.status),
+    status: data.status,
     phone: data.phone || '',
     email: data.email || '',
     remark: data.remark || ''
@@ -103,8 +87,8 @@ export function resetUserPassword(id: number, password: string) {
 }
 
 /** 修改用户状态 */
-export function updateUserStatus(id: number, status: string) {
+export function updateUserStatus(id: number, status: number) {
   return request.put('/sys-user/status', null, {
-    params: { id, status: toBackendStatus(status) }
+    params: { id, status }
   })
 }

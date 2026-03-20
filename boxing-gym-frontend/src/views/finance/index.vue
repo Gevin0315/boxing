@@ -164,7 +164,7 @@ const handlePageChange = (page: number, pageSize: number) => {
         <el-input v-model="queryParams.orderNo" placeholder="请输入订单号" clearable @keyup.enter="handleSearch" />
       </el-form-item>
       <el-form-item label="订单类型">
-        <el-select v-model="queryParams.orderType" placeholder="请选择订单类型" clearable>
+        <el-select v-model="queryParams.orderType" placeholder="请选择订单类型" clearable style="width: 120px">
           <el-option
             v-for="item in ORDER_TYPE"
             :key="item.value"
@@ -180,7 +180,7 @@ const handlePageChange = (page: number, pageSize: number) => {
         <el-input v-model="queryParams.memberName" placeholder="请输入会员姓名" clearable @keyup.enter="handleSearch" />
       </el-form-item>
       <el-form-item label="支付状态">
-        <el-select v-model="queryParams.paymentStatus" placeholder="请选择支付状态" clearable>
+        <el-select v-model="queryParams.paymentStatus" placeholder="请选择支付状态" clearable style="width: 120px">
           <el-option
             v-for="item in PAYMENT_STATUS"
             :key="item.value"

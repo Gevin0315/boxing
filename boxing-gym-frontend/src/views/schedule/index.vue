@@ -175,7 +175,7 @@ const handlePageChange = (page: number, pageSize: number) => {
     <!-- 搜索表单 -->
     <el-form :model="queryParams" inline class="search-form">
       <el-form-item label="课程">
-        <el-select v-model="queryParams.courseId" placeholder="请选择课程" clearable filterable>
+        <el-select v-model="queryParams.courseId" placeholder="请选择课程" clearable filterable style="width: 180px">
           <el-option
             v-for="item in courseOptions"
             :key="item.value"
@@ -185,7 +185,7 @@ const handlePageChange = (page: number, pageSize: number) => {
         </el-select>
       </el-form-item>
       <el-form-item label="教练">
-        <el-select v-model="queryParams.coachId" placeholder="请选择教练" clearable filterable>
+        <el-select v-model="queryParams.coachId" placeholder="请选择教练" clearable filterable style="width: 150px">
           <el-option
             v-for="item in coachOptions"
             :key="item.value"
@@ -195,7 +195,7 @@ const handlePageChange = (page: number, pageSize: number) => {
         </el-select>
       </el-form-item>
       <el-form-item label="状态">
-        <el-select v-model="queryParams.status" placeholder="请选择状态" clearable>
+        <el-select v-model="queryParams.status" placeholder="请选择状态" clearable style="width: 120px">
           <el-option
             v-for="item in SCHEDULE_STATUS"
             :key="item.value"

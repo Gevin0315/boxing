@@ -1,19 +1,19 @@
 import request from '@/utils/request'
 import type { Member, MemberQuery, MemberForm } from '@/types/member'
 
-/** 状态转换：支持三种状态：'0'正常、'1'禁用、'2'锁定 */
-const toFrontendStatus = (status?: number | string): '0' | '1' | '2' => {
-  const num = Number(status)
-  if (num === 0) return '1'
-  if (num === 1) return '0'
-  return '1' // 默认禁用
+/** 状态转换：后端 0-禁用, 1-正常，前端保持一致 */
+const toFrontendStatus = (status?: number | string): '0' | '1' => {
+  const str = String(status)
+  if (str === '1') return '1'
+  if (str === '0') return '0'
+  return '0' // 默认禁用
 }
 
 const toBackendStatus = (status?: string | number): number => {
   const str = String(status)
-  if (str === '0') return 1
-  if (str === '1') return 0
-  return 1 // 默认禁用
+  if (str === '1') return 1
+  if (str === '0') return 0
+  return 0 // 默认禁用
 }
 
 const mapMember = (item: any): Member => ({
@@ -56,28 +56,22 @@ const toBackendMember = (data: MemberForm) => ({
 
 /** 查询会员列表 */
 export async function listMember(query: MemberQuery) {
-  const list = await request.get<any[]>('/member/list')
-  let rows = (list || []).map(mapMember)
-
-  if (query.memberNo) {
-    rows = rows.filter((m) => m.memberNo.includes(query.memberNo!))
+  const data = await request.get<any>('/member/page', {
+    params: {
+      current: query.pageNum || 1,
+      size: query.pageSize || 10,
+      memberNo: query.memberNo || undefined,
+      name: query.name || undefined,
+      phone: query.phone || undefined,
+      status: query.status !== undefined && query.status !== null && query.status !== ''
+        ? toBackendStatus(query.status)
+        : undefined
+    }
+  })
+  return {
+    rows: (data.records || []).map(mapMember),
+    total: data.total || 0
   }
-  if (query.name) {
-    rows = rows.filter((m) => m.name.includes(query.name!))
-  }
-  if (query.phone) {
-    rows = rows.filter((m) => m.phone.includes(query.phone!))
-  }
-  if (query.status) {
-    rows = rows.filter((m) => m.status === query.status)
-  }
-
-  const total = rows.length
-  const pageNum = query.pageNum || 1
-  const pageSize = query.pageSize || 10
-  const start = (pageNum - 1) * pageSize
-  rows = rows.slice(start, start + pageSize)
-  return { rows, total }
 }
 
 /** 查询会员详情 */

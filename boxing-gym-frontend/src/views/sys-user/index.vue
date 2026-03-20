@@ -2,24 +2,24 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search, Refresh, Edit, Delete } from '@element-plus/icons-vue'
-import { listSysUser, delSysUser, updateUserStatus, resetUserPassword } from '@/api/sys-user'
+import { listSysUser, delSysUser, updateUserStatus, resetUserPassword, getRoleList } from '@/api/sys-user'
 import { USER_STATUS } from '@/constants/dict'
-import { getDictLabel } from '@/utils/format'
 import Pagination from '@/components/common/Pagination.vue'
 import AddEdit from './add-edit.vue'
-import type { SysUser, SysUserQuery } from '@/types/sys-user'
+import type { SysUser, SysUserQuery, RoleOption } from '@/types/sys-user'
 
 const loading = ref(false)
 const userList = ref<SysUser[]>([])
 const total = ref(0)
+const roleOptions = ref<RoleOption[]>([])
 
 const queryParams = reactive<SysUserQuery>({
   pageNum: 1,
   pageSize: 10,
   username: '',
-  nickname: '',
+  realName: '',
   phone: '',
-  status: '',
+  status: undefined,
   role: ''
 })
 
@@ -29,7 +29,16 @@ const userId = ref<number>()
 
 onMounted(() => {
   getList()
+  getRoles()
 })
+
+const getRoles = async () => {
+  try {
+    roleOptions.value = await getRoleList()
+  } catch (error) {
+    console.error('Failed to get role list:', error)
+  }
+}
 
 const getList = async () => {
   loading.value = true
@@ -54,9 +63,9 @@ const handleReset = () => {
     pageNum: 1,
     pageSize: 10,
     username: '',
-    nickname: '',
+    realName: '',
     phone: '',
-    status: '',
+    status: undefined,
     role: ''
   })
   getList()
@@ -132,14 +141,14 @@ const handlePageChange = (page: number, pageSize: number) => {
       <el-form-item label="用户名">
         <el-input v-model="queryParams.username" placeholder="请输入用户名" clearable @keyup.enter="handleSearch" />
       </el-form-item>
-      <el-form-item label="昵称">
-        <el-input v-model="queryParams.nickname" placeholder="请输入昵称" clearable @keyup.enter="handleSearch" />
+      <el-form-item label="姓名">
+        <el-input v-model="queryParams.realName" placeholder="请输入姓名" clearable @keyup.enter="handleSearch" />
       </el-form-item>
       <el-form-item label="手机号">
         <el-input v-model="queryParams.phone" placeholder="请输入手机号" clearable @keyup.enter="handleSearch" />
       </el-form-item>
       <el-form-item label="状态">
-        <el-select v-model="queryParams.status" placeholder="请选择状态" clearable>
+        <el-select v-model="queryParams.status" placeholder="请选择状态" clearable style="width: 120px" @change="handleSearch">
           <el-option
             v-for="item in USER_STATUS"
             :key="item.value"
@@ -149,7 +158,14 @@ const handlePageChange = (page: number, pageSize: number) => {
         </el-select>
       </el-form-item>
       <el-form-item label="角色">
-        <el-input v-model="queryParams.role" placeholder="请输入角色" clearable @keyup.enter="handleSearch" />
+        <el-select v-model="queryParams.role" placeholder="请选择角色" clearable style="width: 140px" @change="handleSearch">
+          <el-option
+            v-for="item in roleOptions"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value"
+          />
+        </el-select>
       </el-form-item>
       <el-form-item>
         <el-button type="primary" :icon="Search" @click="handleSearch">搜索</el-button>
@@ -166,16 +182,16 @@ const handlePageChange = (page: number, pageSize: number) => {
     <el-table v-loading="loading" :data="userList" stripe border>
       <el-table-column type="index" label="序号" width="60" align="center" />
       <el-table-column prop="username" label="用户名" min-width="120" />
-      <el-table-column prop="nickname" label="昵称" min-width="120" />
+      <el-table-column prop="nickname" label="姓名" min-width="120" />
       <el-table-column prop="phone" label="手机号" min-width="120" />
       <el-table-column prop="email" label="邮箱" min-width="180" show-overflow-tooltip />
-      <el-table-column prop="role" label="角色" min-width="100" />
+      <el-table-column prop="roleDescription" label="角色" min-width="100" />
       <el-table-column prop="status" label="状态" width="100">
         <template #default="{ row }">
           <el-switch
             v-model="row.status"
-            active-value="0"
-            inactive-value="1"
+            :active-value="1"
+            :inactive-value="0"
             @change="handleStatusChange(row)"
           />
         </template>

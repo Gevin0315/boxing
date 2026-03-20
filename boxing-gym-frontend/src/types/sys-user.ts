@@ -8,8 +8,9 @@ export interface SysUser {
   password?: string
   phone?: string
   email?: string
-  status: '0' | '1' | '2' // 0-正常 1-禁用 2-锁定
+  status: number // 0-禁用 1-启用
   role: string
+  roleDescription?: string
   remark?: string
   createTime?: string
   updateTime?: string
@@ -18,9 +19,9 @@ export interface SysUser {
 /** 系统用户查询参数 */
 export interface SysUserQuery extends PageQuery {
   username?: string
-  nickname?: string
+  realName?: string
   phone?: string
-  status?: string
+  status?: number
   role?: string
 }
 
@@ -32,7 +33,13 @@ export interface SysUserForm {
   password?: string
   phone?: string
   email?: string
-  status: '0' | '1' | '2'
+  status: number
   role: string
   remark?: string
+}
+
+/** 角色选项 */
+export interface RoleOption {
+  value: string
+  label: string
 }

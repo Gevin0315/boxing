@@ -2,15 +2,15 @@
 
 /** 用户状态 */
 export const USER_STATUS = [
-  { value: '0', label: '正常' },
-  { value: '1', label: '禁用' },
-  { value: '2', label: '锁定' }
+  { value: 1, label: '正常' },
+  { value: 0, label: '禁用' }
 ]
 
 /** 系统用户角色 */
 export const USER_ROLE = [
-  { value: 'ROLE_ADMIN', label: '系统管理员' },
-  { value: 'ROLE_RECEPTION', label: '前台操作员' }
+  { value: 'ROLE_ADMIN', label: '超级管理员' },
+  { value: 'ROLE_RECEPTION', label: '前台' },
+  { value: 'ROLE_COACH', label: '教练' }
 ]
 
 /** 性别 */
@@ -21,9 +21,8 @@ export const GENDER = [
 
 /** 会员状态 */
 export const MEMBER_STATUS = [
-  { value: '0', label: '正常' },
-  { value: '1', label: '暂停' },
-  { value: '2', label: '注销' }
+  { value: '1', label: '正常' },
+  { value: '0', label: '禁用' }
 ]
 
 /** 会员等级 */

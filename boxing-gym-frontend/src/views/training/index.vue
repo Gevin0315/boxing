@@ -171,7 +171,7 @@ const handlePageChange = (page: number, pageSize: number) => {
         <el-input-number v-model="queryParams.scheduleId" :min="1" placeholder="请输入排课ID" style="width: 150px" />
       </el-form-item>
       <el-form-item label="签到状态">
-        <el-select v-model="queryParams.status" placeholder="请选择签到状态" clearable>
+        <el-select v-model="queryParams.status" placeholder="请选择签到状态" clearable style="width: 120px">
           <el-option
             v-for="item in CHECKIN_STATUS"
             :key="item.value"

@@ -133,7 +133,7 @@ const handlePageChange = (page: number, pageSize: number) => {
         <el-input v-model="queryParams.courseName" placeholder="请输入课程名称" clearable @keyup.enter="handleSearch" />
       </el-form-item>
       <el-form-item label="课程类型">
-        <el-select v-model="queryParams.courseType" placeholder="请选择课程类型" clearable>
+        <el-select v-model="queryParams.courseType" placeholder="请选择课程类型" clearable style="width: 120px">
           <el-option
             v-for="item in COURSE_TYPE"
             :key="item.value"
@@ -143,7 +143,7 @@ const handlePageChange = (page: number, pageSize: number) => {
         </el-select>
       </el-form-item>
       <el-form-item label="课程分类">
-        <el-select v-model="queryParams.category" placeholder="请选择课程分类" clearable>
+        <el-select v-model="queryParams.category" placeholder="请选择课程分类" clearable style="width: 140px">
           <el-option
             v-for="item in COURSE_CATEGORY"
             :key="item.value"
@@ -153,7 +153,7 @@ const handlePageChange = (page: number, pageSize: number) => {
         </el-select>
       </el-form-item>
       <el-form-item label="课程难度">
-        <el-select v-model="queryParams.level" placeholder="请选择课程难度" clearable>
+        <el-select v-model="queryParams.level" placeholder="请选择课程难度" clearable style="width: 120px">
           <el-option
             v-for="item in COURSE_LEVEL"
             :key="item.value"
@@ -163,7 +163,7 @@ const handlePageChange = (page: number, pageSize: number) => {
         </el-select>
       </el-form-item>
       <el-form-item label="教练">
-        <el-select v-model="queryParams.coachId" placeholder="请选择教练" clearable filterable>
+        <el-select v-model="queryParams.coachId" placeholder="请选择教练" clearable filterable style="width: 150px">
           <el-option
             v-for="item in coachOptions"
             :key="item.value"
@@ -173,7 +173,7 @@ const handlePageChange = (page: number, pageSize: number) => {
         </el-select>
       </el-form-item>
       <el-form-item label="状态">
-        <el-select v-model="queryParams.status" placeholder="请选择状态" clearable>
+        <el-select v-model="queryParams.status" placeholder="请选择状态" clearable style="width: 120px">
           <el-option
             v-for="item in COURSE_STATUS"
             :key="item.value"

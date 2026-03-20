@@ -42,16 +42,25 @@ public class MemberController {
     public Result<Page<Member>> page(
             @RequestParam(defaultValue = "1") Integer current,
             @RequestParam(defaultValue = "10") Integer size,
+            @RequestParam(required = false) String memberNo,
             @RequestParam(required = false) String name,
-            @RequestParam(required = false) String phone) {
+            @RequestParam(required = false) String phone,
+            @RequestParam(required = false) Integer status) {
         Page<Member> page = new Page<>(current, size);
         LambdaQueryWrapper<Member> wrapper = new LambdaQueryWrapper<>();
+        if (memberNo != null && !memberNo.isEmpty()) {
+            wrapper.like(Member::getMemberNo, memberNo);
+        }
         if (name != null && !name.isEmpty()) {
             wrapper.like(Member::getName, name);
         }
         if (phone != null && !phone.isEmpty()) {
             wrapper.like(Member::getPhone, phone);
         }
+        if (status != null) {
+            wrapper.eq(Member::getStatus, status);
+        }
+        wrapper.orderByDesc(Member::getCreateTime);
         memberService.page(page, wrapper);
         return Result.success(page);
     }

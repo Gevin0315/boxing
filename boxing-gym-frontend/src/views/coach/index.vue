@@ -130,7 +130,7 @@ const handlePageChange = (page: number, pageSize: number) => {
         <el-input v-model="queryParams.specialties" placeholder="请输入专长" clearable @keyup.enter="handleSearch" />
       </el-form-item>
       <el-form-item label="等级">
-        <el-select v-model="queryParams.level" placeholder="请选择等级" clearable>
+        <el-select v-model="queryParams.level" placeholder="请选择等级" clearable style="width: 120px">
           <el-option
             v-for="item in COACH_LEVEL"
             :key="item.value"
@@ -140,7 +140,7 @@ const handlePageChange = (page: number, pageSize: number) => {
         </el-select>
       </el-form-item>
       <el-form-item label="状态">
-        <el-select v-model="queryParams.status" placeholder="请选择状态" clearable>
+        <el-select v-model="queryParams.status" placeholder="请选择状态" clearable style="width: 120px">
           <el-option
             v-for="item in COACH_STATUS"
             :key="item.value"
