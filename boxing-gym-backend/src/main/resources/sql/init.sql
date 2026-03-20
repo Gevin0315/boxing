@@ -32,7 +32,9 @@ CREATE TABLE `sys_user` (
     `update_by` BIGINT COMMENT '更新人ID',
     `deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除: 0-未删除, 1-已删除',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_username` (`username`)
+    UNIQUE KEY `uk_username` (`username`),
+    KEY `idx_phone` (`phone`),
+    KEY `idx_role` (`role`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='系统用户表（馆主、前台、教练）';
 
 -- sys_coach_profile (教练扩展信息表)
@@ -57,7 +59,9 @@ CREATE TABLE `sys_coach_profile` (
     `update_by` BIGINT COMMENT '更新人ID',
     `deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除: 0-未删除, 1-已删除',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_user_id` (`user_id`)
+    UNIQUE KEY `uk_user_id` (`user_id`),
+    KEY `idx_level` (`level`),
+    KEY `idx_hire_date` (`hire_date`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='教练扩展信息表';
 
 -- ============================================
@@ -67,7 +71,6 @@ CREATE TABLE `sys_coach_profile` (
 -- member (会员表)
 CREATE TABLE `member` (
     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
-    `member_no` VARCHAR(20) NOT NULL COMMENT '会员编号（如: M000001）',
     `name` VARCHAR(50) NOT NULL COMMENT '会员姓名',
     `phone` VARCHAR(11) NOT NULL COMMENT '手机号（唯一）',
     `gender` TINYINT NOT NULL DEFAULT 1 COMMENT '性别: 0-女, 1-男',
@@ -90,8 +93,9 @@ CREATE TABLE `member` (
     `deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除: 0-未删除, 1-已删除',
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_phone` (`phone`),
-    UNIQUE KEY `uk_member_no` (`member_no`),
-    KEY `idx_card_expire_date` (`card_expire_date`)
+    KEY `idx_card_expire_date` (`card_expire_date`),
+    KEY `idx_membership_level` (`membership_level`),
+    KEY `idx_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='会员信息表';
 
 -- ============================================
@@ -121,7 +125,10 @@ CREATE TABLE `course` (
     `deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除: 0-未删除, 1-已删除',
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_code` (`code`),
-    KEY `idx_coach_id` (`coach_id`)
+    KEY `idx_coach_id` (`coach_id`),
+    KEY `idx_type` (`type`),
+    KEY `idx_category` (`category`),
+    KEY `idx_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='课程定义表';
 
 -- course_schedule (排课记录表)
@@ -145,7 +152,9 @@ CREATE TABLE `course_schedule` (
     KEY `idx_course_id` (`course_id`),
     KEY `idx_coach_id` (`coach_id`),
     KEY `idx_start_time` (`start_time`),
-    KEY `idx_status` (`status`)
+    KEY `idx_end_time` (`end_time`),
+    KEY `idx_status` (`status`),
+    KEY `idx_classroom` (`classroom`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='排课记录表';
 
 -- ============================================
@@ -157,8 +166,10 @@ CREATE TABLE `finance_order` (
     `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
     `order_no` VARCHAR(32) NOT NULL COMMENT '订单号',
     `member_id` BIGINT NOT NULL COMMENT '会员ID',
+    `member_card_id` BIGINT COMMENT '关联会员卡ID',
     `amount` DECIMAL(10, 2) NOT NULL COMMENT '金额（正数为充值，负数为退款）',
     `type` TINYINT NOT NULL COMMENT '类型: 1-充值, 2-退款, 3-课程消费',
+    `order_category` TINYINT DEFAULT 1 COMMENT '订单类别: 1-储值充值, 2-购卡, 3-课程消费',
     `pay_method` TINYINT COMMENT '支付方式: 1-微信, 2-支付宝, 3-现金, 4-刷卡, 5-系统扣减',
     `remark` VARCHAR(255) COMMENT '备注',
     `paid_amount` DECIMAL(10, 2) COMMENT '已付金额',
@@ -169,7 +180,10 @@ CREATE TABLE `finance_order` (
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_order_no` (`order_no`),
     KEY `idx_member_id` (`member_id`),
+    KEY `idx_member_card_id` (`member_card_id`),
     KEY `idx_type` (`type`),
+    KEY `idx_order_category` (`order_category`),
+    KEY `idx_payment_status` (`payment_status`),
     KEY `idx_create_time` (`create_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='财务订单表';
 
@@ -180,6 +194,8 @@ CREATE TABLE `training_record` (
     `member_id` BIGINT NOT NULL COMMENT '会员ID',
     `schedule_id` BIGINT NOT NULL COMMENT '排课记录ID',
     `coach_id` BIGINT NOT NULL COMMENT '教练ID（冗余，方便统计）',
+    `member_card_id` BIGINT COMMENT '使用的会员卡ID',
+    `card_type_used` VARCHAR(20) COMMENT '使用的卡类型',
     `checkin_time` DATETIME COMMENT '签到时间',
     `checkout_time` DATETIME COMMENT '签退时间',
     `status` TINYINT NOT NULL DEFAULT 0 COMMENT '状态: 0-已预约, 1-已签到, 2-已取消, 3-旷课',
@@ -194,8 +210,90 @@ CREATE TABLE `training_record` (
     KEY `idx_member_id` (`member_id`),
     KEY `idx_schedule_id` (`schedule_id`),
     KEY `idx_coach_id` (`coach_id`),
-    KEY `idx_status` (`status`)
+    KEY `idx_member_card_id` (`member_card_id`),
+    KEY `idx_status` (`status`),
+    KEY `idx_checkin_time` (`checkin_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='上课签到记录表';
+
+-- ============================================
+-- 4.5 会员卡系统模块
+-- ============================================
+
+-- membership_card (卡片定义表)
+CREATE TABLE `membership_card` (
+    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+    `card_name` VARCHAR(100) NOT NULL COMMENT '卡名称',
+    `card_category` TINYINT NOT NULL COMMENT '卡分类: 1-团课期限卡, 2-团课次卡, 3-私教次卡',
+    `card_type` VARCHAR(20) NOT NULL COMMENT '卡类型',
+    `duration_days` INT COMMENT '有效期天数（期限卡）',
+    `session_count` INT COMMENT '包含次数（次卡）',
+    `price` DECIMAL(10, 2) NOT NULL COMMENT '售价',
+    `original_price` DECIMAL(10, 2) COMMENT '原价',
+    `activation_deadline_days` INT DEFAULT 30 COMMENT '激活期限天数',
+    `validity_days_after_activation` INT COMMENT '激活后有效期（次卡）',
+    `description` VARCHAR(500) COMMENT '描述',
+    `status` TINYINT NOT NULL DEFAULT 1 COMMENT '0-停售, 1-在售',
+    `sort_order` INT DEFAULT 0 COMMENT '排序',
+    `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `deleted` TINYINT DEFAULT 0 COMMENT '逻辑删除: 0-未删除, 1-已删除',
+    PRIMARY KEY (`id`),
+    KEY `idx_card_category` (`card_category`),
+    KEY `idx_card_type` (`card_type`),
+    KEY `idx_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='会员卡定义表';
+
+-- member_card (会员持卡记录表)
+CREATE TABLE `member_card` (
+    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+    `card_no` VARCHAR(32) NOT NULL COMMENT '会员卡号',
+    `member_id` BIGINT NOT NULL COMMENT '会员ID',
+    `card_id` BIGINT NOT NULL COMMENT '卡片定义ID',
+    `card_category` TINYINT NOT NULL COMMENT '卡分类',
+    `card_type` VARCHAR(20) NOT NULL COMMENT '卡类型',
+    `status` TINYINT NOT NULL DEFAULT 0 COMMENT '0-未激活, 1-生效中, 2-已过期, 3-已作废',
+    `total_sessions` INT COMMENT '总次数',
+    `remaining_sessions` INT COMMENT '剩余次数',
+    `purchase_time` DATETIME NOT NULL COMMENT '购买时间',
+    `activation_deadline` DATE COMMENT '激活截止日期',
+    `activation_time` DATETIME COMMENT '激活时间',
+    `start_date` DATE COMMENT '生效开始日期',
+    `expire_date` DATE COMMENT '失效日期',
+    `last_checkin_time` DATETIME COMMENT '最后签到时间',
+    `order_id` BIGINT COMMENT '关联订单ID',
+    `remark` VARCHAR(255) COMMENT '备注',
+    `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `deleted` TINYINT DEFAULT 0 COMMENT '逻辑删除: 0-未删除, 1-已删除',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_card_no` (`card_no`),
+    KEY `idx_member_id` (`member_id`),
+    KEY `idx_card_id` (`card_id`),
+    KEY `idx_status` (`status`),
+    KEY `idx_expire_date` (`expire_date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='会员持卡记录表';
+
+-- card_usage_record (卡片使用记录表)
+CREATE TABLE `card_usage_record` (
+    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+    `record_no` VARCHAR(32) NOT NULL COMMENT '记录编号',
+    `member_card_id` BIGINT NOT NULL COMMENT '会员卡ID',
+    `member_id` BIGINT NOT NULL COMMENT '会员ID',
+    `usage_type` TINYINT NOT NULL COMMENT '1-激活, 2-签到, 3-过期, 4-作废',
+    `schedule_id` BIGINT COMMENT '排课ID',
+    `training_record_id` BIGINT COMMENT '训练记录ID',
+    `sessions_before` INT COMMENT '操作前次数',
+    `sessions_after` INT COMMENT '操作后次数',
+    `remark` VARCHAR(255) COMMENT '备注',
+    `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `create_by` BIGINT COMMENT '操作人ID',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_record_no` (`record_no`),
+    KEY `idx_member_card_id` (`member_card_id`),
+    KEY `idx_member_id` (`member_id`),
+    KEY `idx_usage_type` (`usage_type`),
+    KEY `idx_create_time` (`create_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='会员卡使用记录表';
 
 -- ============================================
 -- 初始化数据
@@ -235,13 +333,13 @@ INSERT INTO `course` (`code`, `name`, `description`, `type`, `duration`, `catego
 ('C007', '少儿拳击', '面向6-12岁儿童的拳击启蒙课程', 1, 45, 'kids', 'beginner', 10, 89.00, 3, 7),
 ('C008', '女子防身术', '实用的女子防身技巧，提高自我保护能力', 1, 60, 'self_defense', 'beginner', 15, 99.00, 5, 8);
 
--- 初始化会员数据
-INSERT INTO `member` (`member_no`, `name`, `phone`, `gender`, `balance`, `remaining_course_count`, `card_expire_date`, `status`, `birthday`, `id_card`, `address`, `emergency_contact`, `emergency_phone`, `membership_level`, `remark`) VALUES
-('M000001', '张三', '13900000001', 1, 5000.00, 30, '2025-12-31', 1, '1990-05-15', '110101199005151234', '北京市朝阳区望京街道', '张父', '13900000002', 'gold', 'VIP会员'),
-('M000002', '李四', '13900000003', 1, 3000.00, 20, '2025-06-30', 1, '1992-08-20', '110101199208202345', '北京市海淀区中关村', '李母', '13900000004', 'silver', '普通会员'),
-('M000003', '王五', '13900000005', 1, 10000.00, 50, '2026-12-31', 1, '1988-12-10', '110101198812103456', '北京市西城区金融街', '王妻', '13900000006', 'diamond', '至尊会员'),
-('M000004', '赵六', '13900000007', 0, 2000.00, 15, '2025-03-15', 1, '1995-03-25', '110101199503254567', '北京市东城区王府井', '赵父', '13900000008', 'normal', '新会员'),
-('M000005', '钱七', '13900000009', 1, 8000.00, 40, '2025-09-30', 1, '1991-07-08', '110101199107085678', '北京市丰台区方庄', '钱妻', '13900000010', 'gold', '活跃会员');
+-- 初始化会员数据（移除 member_no 字段）
+INSERT INTO `member` (`name`, `phone`, `gender`, `balance`, `remaining_course_count`, `card_expire_date`, `status`, `birthday`, `id_card`, `address`, `emergency_contact`, `emergency_phone`, `membership_level`, `remark`) VALUES
+('张三', '13900000001', 1, 5000.00, 30, '2025-12-31', 1, '1990-05-15', '110101199005151234', '北京市朝阳区望京街道', '张父', '13900000002', 'gold', 'VIP会员'),
+('李四', '13900000003', 1, 3000.00, 20, '2025-06-30', 1, '1992-08-20', '110101199208202345', '北京市海淀区中关村', '李母', '13900000004', 'silver', '普通会员'),
+('王五', '13900000005', 1, 10000.00, 50, '2026-12-31', 1, '1988-12-10', '110101198812103456', '北京市西城区金融街', '王妻', '13900000006', 'diamond', '至尊会员'),
+('赵六', '13900000007', 0, 2000.00, 15, '2025-03-15', 1, '1995-03-25', '110101199503254567', '北京市东城区王府井', '赵父', '13900000008', 'normal', '新会员'),
+('钱七', '13900000009', 1, 8000.00, 40, '2025-09-30', 1, '1991-07-08', '110101199107085678', '北京市丰台区方庄', '钱妻', '13900000010', 'gold', '活跃会员');
 
 -- 初始化排课数据（未来一周的课程）
 INSERT INTO `course_schedule` (`course_id`, `coach_id`, `start_time`, `end_time`, `max_people`, `current_people`, `status`, `classroom`, `remark`) VALUES
@@ -259,14 +357,14 @@ INSERT INTO `course_schedule` (`course_id`, `coach_id`, `start_time`, `end_time`
 (4, 3, DATE_ADD(DATE_ADD(NOW(), INTERVAL 3 DAY), INTERVAL 14 HOUR), DATE_ADD(DATE_ADD(NOW(), INTERVAL 3 DAY), INTERVAL 15 HOUR), 1, 0, 0, '私教区', '拳击私教');
 
 -- 初始化财务订单数据
-INSERT INTO `finance_order` (`order_no`, `member_id`, `amount`, `type`, `pay_method`, `remark`, `paid_amount`, `payment_status`, `create_by`) VALUES
-('FO202401010001', 1, 5000.00, 1, 1, '会员充值', 5000.00, 1, 1),
-('FO202401020001', 2, 3000.00, 1, 2, '会员充值', 3000.00, 1, 1),
-('FO202401030001', 3, 10000.00, 1, 3, '会员充值-钻石卡', 10000.00, 1, 1),
-('FO202401050001', 4, 2000.00, 1, 4, '会员充值', 2000.00, 1, 2),
-('FO202401060001', 5, 8000.00, 1, 1, '会员充值-金卡', 8000.00, 1, 1),
-('FO202402010001', 1, -99.00, 3, 5, '课程消费-拳击基础', 99.00, 1, 1),
-('FO202402020001', 3, -129.00, 3, 5, '课程消费-巴西柔术', 129.00, 1, 1);
+INSERT INTO `finance_order` (`order_no`, `member_id`, `amount`, `type`, `order_category`, `pay_method`, `remark`, `paid_amount`, `payment_status`, `create_by`) VALUES
+('FO202401010001', 1, 5000.00, 1, 1, 1, '会员充值', 5000.00, 1, 1),
+('FO202401020001', 2, 3000.00, 1, 1, 2, '会员充值', 3000.00, 1, 1),
+('FO202401030001', 3, 10000.00, 1, 1, 3, '会员充值-钻石卡', 10000.00, 1, 1),
+('FO202401050001', 4, 2000.00, 1, 1, 4, '会员充值', 2000.00, 1, 2),
+('FO202401060001', 5, 8000.00, 1, 1, 1, '会员充值-金卡', 8000.00, 1, 1),
+('FO202402010001', 1, -99.00, 3, 3, 5, '课程消费-拳击基础', 99.00, 1, 1),
+('FO202402020001', 3, -129.00, 3, 3, 5, '课程消费-巴西柔术', 129.00, 1, 1);
 
 -- 初始化训练记录数据
 INSERT INTO `training_record` (`record_no`, `member_id`, `schedule_id`, `coach_id`, `checkin_time`, `checkout_time`, `status`, `remark`, `create_by`) VALUES
@@ -276,126 +374,17 @@ INSERT INTO `training_record` (`record_no`, `member_id`, `schedule_id`, `coach_i
 ('TR202402030001', 1, 4, 3, NULL, NULL, 0, '已预约', 1),
 ('TR202402030002', 5, 4, 3, NULL, NULL, 0, '已预约', 1);
 
--- ============================================
--- 4.5 会员卡系统模块
--- ============================================
-
--- membership_card (卡片定义表)
-CREATE TABLE IF NOT EXISTS `membership_card` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
-    `card_code` VARCHAR(32) NOT NULL COMMENT '卡编码',
-    `card_name` VARCHAR(100) NOT NULL COMMENT '卡名称',
-    `card_category` TINYINT NOT NULL COMMENT '卡分类: 1-团课期限卡, 2-团课次卡, 3-私教次卡',
-    `card_type` VARCHAR(20) NOT NULL COMMENT '卡类型',
-    `duration_days` INT COMMENT '有效期天数（期限卡）',
-    `session_count` INT COMMENT '包含次数（次卡）',
-    `price` DECIMAL(10,2) NOT NULL COMMENT '售价',
-    `original_price` DECIMAL(10,2) COMMENT '原价',
-    `activation_deadline_days` INT DEFAULT 30 COMMENT '激活期限天数',
-    `validity_days_after_activation` INT COMMENT '激活后有效期（次卡）',
-    `description` VARCHAR(500) COMMENT '描述',
-    `status` TINYINT NOT NULL DEFAULT 1 COMMENT '0-停售, 1-在售',
-    `sort_order` INT DEFAULT 0 COMMENT '排序',
-    `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    `deleted` TINYINT DEFAULT 0 COMMENT '逻辑删除: 0-未删除, 1-已删除',
-    PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_card_code` (`card_code`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='会员卡定义表';
-
--- member_card (会员持卡记录表)
-CREATE TABLE IF NOT EXISTS `member_card` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
-    `card_no` VARCHAR(32) NOT NULL COMMENT '会员卡号',
-    `member_id` BIGINT NOT NULL COMMENT '会员ID',
-    `card_id` BIGINT NOT NULL COMMENT '卡片定义ID',
-    `card_category` TINYINT NOT NULL COMMENT '卡分类',
-    `card_type` VARCHAR(20) NOT NULL COMMENT '卡类型',
-    `status` TINYINT NOT NULL DEFAULT 0 COMMENT '0-未激活, 1-生效中, 2-已过期, 3-已作废',
-    `total_sessions` INT COMMENT '总次数',
-    `remaining_sessions` INT COMMENT '剩余次数',
-    `purchase_time` DATETIME NOT NULL COMMENT '购买时间',
-    `activation_deadline` DATE COMMENT '激活截止日期',
-    `activation_time` DATETIME COMMENT '激活时间',
-    `start_date` DATE COMMENT '生效开始日期',
-    `expire_date` DATE COMMENT '失效日期',
-    `last_checkin_time` DATETIME COMMENT '最后签到时间',
-    `order_id` BIGINT COMMENT '关联订单ID',
-    `remark` VARCHAR(255) COMMENT '备注',
-    `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `update_time` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    `deleted` TINYINT DEFAULT 0 COMMENT '逻辑删除: 0-未删除, 1-已删除',
-    PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_card_no` (`card_no`),
-    KEY `idx_member_id` (`member_id`),
-    KEY `idx_status` (`status`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='会员持卡记录表';
-
--- card_usage_record (卡片使用记录表)
-CREATE TABLE IF NOT EXISTS `card_usage_record` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '主键ID',
-    `record_no` VARCHAR(32) NOT NULL COMMENT '记录编号',
-    `member_card_id` BIGINT NOT NULL COMMENT '会员卡ID',
-    `member_id` BIGINT NOT NULL COMMENT '会员ID',
-    `usage_type` TINYINT NOT NULL COMMENT '1-激活, 2-签到, 3-过期, 4-作废',
-    `schedule_id` BIGINT COMMENT '排课ID',
-    `training_record_id` BIGINT COMMENT '训练记录ID',
-    `sessions_before` INT COMMENT '操作前次数',
-    `sessions_after` INT COMMENT '操作后次数',
-    `remark` VARCHAR(255) COMMENT '备注',
-    `create_time` DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `create_by` BIGINT COMMENT '操作人ID',
-    PRIMARY KEY (`id`),
-    KEY `idx_member_card_id` (`member_card_id`),
-    KEY `idx_member_id` (`member_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='会员卡使用记录表';
-
--- 修改 finance_order 表，添加会员卡相关字段
--- MySQL 不支持 ADD COLUMN IF NOT EXISTS，使用存储过程实现
-DELIMITER //
-CREATE PROCEDURE add_column_if_not_exists_finance_order()
-BEGIN
-    -- 添加 member_card_id 字段
-    IF NOT EXISTS (SELECT * FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'finance_order' AND column_name = 'member_card_id') THEN
-        ALTER TABLE `finance_order` ADD COLUMN `member_card_id` BIGINT COMMENT '关联会员卡ID';
-    END IF;
-    -- 添加 order_category 字段
-    IF NOT EXISTS (SELECT * FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'finance_order' AND column_name = 'order_category') THEN
-        ALTER TABLE `finance_order` ADD COLUMN `order_category` TINYINT DEFAULT 1 COMMENT '1-储值充值, 2-购卡, 3-课程消费';
-    END IF;
-END //
-DELIMITER ;
-CALL add_column_if_not_exists_finance_order();
-DROP PROCEDURE IF EXISTS add_column_if_not_exists_finance_order;
-
--- 修改 training_record 表，添加会员卡相关字段
-DELIMITER //
-CREATE PROCEDURE add_column_if_not_exists_training_record()
-BEGIN
-    -- 添加 member_card_id 字段
-    IF NOT EXISTS (SELECT * FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'training_record' AND column_name = 'member_card_id') THEN
-        ALTER TABLE `training_record` ADD COLUMN `member_card_id` BIGINT COMMENT '使用的会员卡ID';
-    END IF;
-    -- 添加 card_type_used 字段
-    IF NOT EXISTS (SELECT * FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'training_record' AND column_name = 'card_type_used') THEN
-        ALTER TABLE `training_record` ADD COLUMN `card_type_used` VARCHAR(20) COMMENT '使用的卡类型';
-    END IF;
-END //
-DELIMITER ;
-CALL add_column_if_not_exists_training_record();
-DROP PROCEDURE IF EXISTS add_column_if_not_exists_training_record;
-
--- 初始化会员卡定义数据
-INSERT INTO `membership_card` (`card_code`, `card_name`, `card_category`, `card_type`, `duration_days`, `session_count`, `price`, `original_price`, `activation_deadline_days`, `validity_days_after_activation`, `description`, `status`, `sort_order`) VALUES
+-- 初始化会员卡定义数据（移除 card_code 字段）
+INSERT INTO `membership_card` (`card_name`, `card_category`, `card_type`, `duration_days`, `session_count`, `price`, `original_price`, `activation_deadline_days`, `validity_days_after_activation`, `description`, `status`, `sort_order`) VALUES
 -- 团课期限卡
-('GROUP_MONTHLY', '团课月卡', 1, 'MONTHLY', 30, NULL, 299.00, 399.00, 30, NULL, '团课月卡，30天内不限次数参加团课', 1, 1),
-('GROUP_QUARTERLY', '团课季卡', 1, 'QUARTERLY', 90, NULL, 699.00, 1197.00, 30, NULL, '团课季卡，90天内不限次数参加团课', 1, 2),
-('GROUP_YEARLY', '团课年卡', 1, 'YEARLY', 365, NULL, 1999.00, 4788.00, 30, NULL, '团课年卡，365天内不限次数参加团课', 1, 3),
+('团课月卡', 1, 'MONTHLY', 30, NULL, 299.00, 399.00, 30, NULL, '团课月卡，30天内不限次数参加团课', 1, 1),
+('团课季卡', 1, 'QUARTERLY', 90, NULL, 699.00, 1197.00, 30, NULL, '团课季卡，90天内不限次数参加团课', 1, 2),
+('团课年卡', 1, 'YEARLY', 365, NULL, 1999.00, 4788.00, 30, NULL, '团课年卡，365天内不限次数参加团课', 1, 3),
 -- 团课次卡
-('SESSION_GROUP_1', '单次日卡', 2, 'SESSION_GROUP_1', NULL, 1, 79.00, 99.00, 30, 1, '单次团课卡，当日有效', 1, 4),
-('SESSION_GROUP_10', '10次团课卡', 2, 'SESSION_GROUP_10', NULL, 10, 699.00, 990.00, 30, 30, '10次团课卡，激活后30天内有效', 1, 5),
-('SESSION_GROUP_20', '20次团课卡', 2, 'SESSION_GROUP_20', NULL, 20, 1199.00, 1980.00, 30, 60, '20次团课卡，激活后60天内有效', 1, 6),
+('单次日卡', 2, 'SESSION_GROUP_1', NULL, 1, 79.00, 99.00, 30, 1, '单次团课卡，当日有效', 1, 4),
+('10次团课卡', 2, 'SESSION_GROUP_10', NULL, 10, 699.00, 990.00, 30, 30, '10次团课卡，激活后30天内有效', 1, 5),
+('20次团课卡', 2, 'SESSION_GROUP_20', NULL, 20, 1199.00, 1980.00, 30, 60, '20次团课卡，激活后60天内有效', 1, 6),
 -- 私教次卡
-('SESSION_PRIVATE_5', '5次私教卡', 3, 'SESSION_PRIVATE_5', NULL, 5, 1799.00, 1995.00, 30, 90, '5次私教卡，激活后90天内有效', 1, 7),
-('SESSION_PRIVATE_10', '10次私教卡', 3, 'SESSION_PRIVATE_10', NULL, 10, 3299.00, 3990.00, 30, 180, '10次私教卡，激活后180天内有效', 1, 8),
-('SESSION_PRIVATE_20', '20次私教卡', 3, 'SESSION_PRIVATE_20', NULL, 20, 5999.00, 7980.00, 30, 365, '20次私教卡，激活后365天内有效', 1, 9);
+('5次私教卡', 3, 'SESSION_PRIVATE_5', NULL, 5, 1799.00, 1995.00, 30, 90, '5次私教卡，激活后90天内有效', 1, 7),
+('10次私教卡', 3, 'SESSION_PRIVATE_10', NULL, 10, 3299.00, 3990.00, 30, 180, '10次私教卡，激活后180天内有效', 1, 8),
+('20次私教卡', 3, 'SESSION_PRIVATE_20', NULL, 20, 5999.00, 7980.00, 30, 365, '20次私教卡，激活后365天内有效', 1, 9);
