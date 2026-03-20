@@ -36,7 +36,10 @@
       "Bash(npm install:*)",
       "Bash(git checkout:*)",
       "Bash(mysql:*)",
-      "Bash(git -C /Users/gevinlee/code/boxing status)"
+      "Bash(git -C /Users/gevinlee/code/boxing status)",
+      "Bash(boxing-gym-frontend/src/api/finance-order.ts)",
+      "Bash(git status:*)",
+      "Bash(npx vite build:*)"
     ]
   }
 }
