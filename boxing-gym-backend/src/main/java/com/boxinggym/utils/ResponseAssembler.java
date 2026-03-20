@@ -49,7 +49,6 @@ public class ResponseAssembler {
         // 会员信息
         if (member != null) {
             dto.setMemberId(member.getId());
-            dto.setMemberNo(member.getMemberNo());
             dto.setMemberName(member.getName());
         }
 
@@ -111,7 +110,6 @@ public class ResponseAssembler {
         // 会员信息
         if (member != null) {
             dto.setMemberId(member.getId());
-            dto.setMemberNo(member.getMemberNo());
             dto.setMemberName(member.getName());
         }
 

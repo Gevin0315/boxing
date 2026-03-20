@@ -32,17 +32,11 @@ public class FinanceOrderServiceImpl extends ServiceImpl<FinanceOrderMapper, Fin
         Page<FinanceOrder> page = new Page<>(query.getCurrent(), query.getSize());
         LambdaQueryWrapper<FinanceOrder> wrapper = new LambdaQueryWrapper<>();
 
-        // 根据会员编号或姓名查询符合条件的会员ID列表
+        // 根据会员姓名查询符合条件的会员ID列表
         List<Long> memberIds = null;
-        if ((query.getMemberNo() != null && !query.getMemberNo().isEmpty())
-                || (query.getMemberName() != null && !query.getMemberName().isEmpty())) {
+        if (query.getMemberName() != null && !query.getMemberName().isEmpty()) {
             LambdaQueryWrapper<Member> memberWrapper = new LambdaQueryWrapper<>();
-            if (query.getMemberNo() != null && !query.getMemberNo().isEmpty()) {
-                memberWrapper.like(Member::getMemberNo, query.getMemberNo());
-            }
-            if (query.getMemberName() != null && !query.getMemberName().isEmpty()) {
-                memberWrapper.like(Member::getName, query.getMemberName());
-            }
+            memberWrapper.like(Member::getName, query.getMemberName());
             List<Member> members = memberService.list(memberWrapper);
             memberIds = members.stream()
                     .map(Member::getId)
@@ -121,7 +115,6 @@ public class FinanceOrderServiceImpl extends ServiceImpl<FinanceOrderMapper, Fin
         vo.setCreateTime(order.getCreateTime());
 
         if (member != null) {
-            vo.setMemberNo(member.getMemberNo());
             vo.setMemberName(member.getName());
         }
         return vo;

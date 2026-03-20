@@ -162,7 +162,6 @@ public class TrainingRecordServiceImpl extends ServiceImpl<TrainingRecordMapper,
         // 填充会员信息
         Member member = memberMap.get(record.getMemberId());
         if (member != null) {
-            vo.setMemberNo(member.getMemberNo());
             vo.setMemberName(member.getName());
         }
 
