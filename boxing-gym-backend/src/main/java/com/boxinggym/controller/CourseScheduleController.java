@@ -1,11 +1,14 @@
 package com.boxinggym.controller;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.boxinggym.common.BusinessException;
 import com.boxinggym.common.Result;
 import com.boxinggym.dto.BatchDeleteDTO;
+import com.boxinggym.dto.CourseScheduleQueryDTO;
 import com.boxinggym.entity.CourseSchedule;
 import com.boxinggym.service.CourseScheduleService;
 import com.boxinggym.utils.SecurityUtil;
+import com.boxinggym.vo.CourseScheduleVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -26,6 +29,15 @@ import java.util.List;
 public class CourseScheduleController {
 
     private final CourseScheduleService courseScheduleService;
+
+    /**
+     * 分页查询排课
+     */
+    @Operation(summary = "分页查询排课")
+    @GetMapping("/page")
+    public Result<Page<CourseScheduleVO>> page(CourseScheduleQueryDTO query) {
+        return Result.success(courseScheduleService.page(query));
+    }
 
     /**
      * 查询所有排课记录

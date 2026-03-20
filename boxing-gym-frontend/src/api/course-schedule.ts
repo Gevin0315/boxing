@@ -14,7 +14,7 @@ export interface CourseSchedule {
   classroom: string
   maxCapacity: number
   currentCount?: number
-  status: '0' | '1' | '2' // 0-正常 1-已取消 2-已完成
+  status: '0' | '1' | '2' | '3' // 0-未开始 1-进行中 2-已结束 3-已取消
   remark?: string
   createTime?: string
 }
@@ -30,20 +30,21 @@ const mapSchedule = (item: any): CourseSchedule => ({
   startTime: toTime(item.startTime),
   endTime: toTime(item.endTime),
   classroom: item.classroom || '',
-  maxCapacity: Number(item.maxPeople || 0),
-  currentCount: Number(item.currentPeople || 0),
+  maxCapacity: Number(item.maxCapacity || 0),
+  currentCount: Number(item.currentCount || 0),
   status: toFrontendStatus(item.status),
   remark: item.remark || '',
   createTime: item.createTime
 })
 
-/** 统一状态映射规则：'0'正常、'1'已取消、'2'已完成 */
-const toFrontendStatus = (status?: number | string): '0' | '1' | '2' => {
+/** 统一状态映射规则：'0'未开始、'1'进行中、'2'已结束、'3'已取消 */
+const toFrontendStatus = (status?: number | string): '0' | '1' | '2' | '3' => {
   const num = Number(status)
   if (num === 0) return '0'
   if (num === 1) return '1'
   if (num === 2) return '2'
-  return '0' // 默认正常
+  if (num === 3) return '3'
+  return '0' // 默认未开始
 }
 
 const toBackendStatus = (status?: string | number): number => {
@@ -51,7 +52,8 @@ const toBackendStatus = (status?: string | number): number => {
   if (str === '0') return 0
   if (str === '1') return 1
   if (str === '2') return 2
-  return 0 // 默认正常
+  if (str === '3') return 3
+  return 0 // 默认未开始
 }
 
 const toBackendPayload = (data: CourseSchedule) => ({
@@ -67,33 +69,28 @@ const toBackendPayload = (data: CourseSchedule) => ({
   remark: data.remark || ''
 })
 
-/** 查询排课列表 */
+/** 查询排课分页列表 */
+export async function pageSchedule(query: any) {
+  const params: Record<string, any> = {
+    current: query.pageNum || 1,
+    size: query.pageSize || 10
+  }
+  if (query.courseId) params.courseId = query.courseId
+  if (query.coachId) params.coachId = query.coachId
+  if (query.status !== undefined && query.status !== '') params.status = query.status
+  if (query.startDate) params.startDate = query.startDate
+  if (query.endDate) params.endDate = query.endDate
+
+  const data = await request.get<{ records: any[]; total: number }>('/course-schedule/page', { params })
+  return {
+    rows: data.records.map(mapSchedule),
+    total: data.total
+  }
+}
+
+/** 查询排课列表（改为调用分页接口）*/
 export async function listSchedule(query: any) {
-  const list = await request.get<any[]>('/course-schedule/list')
-  let rows = (list || []).map(mapSchedule)
-
-  if (query.courseId) {
-    rows = rows.filter((s) => s.courseId === query.courseId)
-  }
-  if (query.coachId) {
-    rows = rows.filter((s) => s.coachId === query.coachId)
-  }
-  if (query.status) {
-    rows = rows.filter((s) => String(s.status) === String(query.status))
-  }
-  if (query.startDate) {
-    rows = rows.filter((s) => s.scheduleDate >= query.startDate)
-  }
-  if (query.endDate) {
-    rows = rows.filter((s) => s.scheduleDate <= query.endDate)
-  }
-
-  const total = rows.length
-  const pageNum = query.pageNum || 1
-  const pageSize = query.pageSize || 10
-  const start = (pageNum - 1) * pageSize
-  rows = rows.slice(start, start + pageSize)
-  return { rows, total }
+  return pageSchedule(query)
 }
 
 /** 查询排课详情 */

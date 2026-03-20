@@ -1,25 +1,19 @@
-package com.boxinggym.dto;
+package com.boxinggym.vo;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
 /**
- * 排课响应 VO
+ * 排课视图对象
  */
 @Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-@Schema(description = "排课信息响应")
+@Schema(description = "排课信息")
 public class CourseScheduleVO {
 
-    @Schema(description = "排课ID")
+    @Schema(description = "主键ID")
     private Long id;
 
     @Schema(description = "课程ID")
@@ -34,7 +28,7 @@ public class CourseScheduleVO {
     @Schema(description = "教练ID")
     private Long coachId;
 
-    @Schema(description = "教练姓名")
+    @Schema(description = "教练名称")
     private String coachName;
 
     @Schema(description = "开始时间")
@@ -45,18 +39,22 @@ public class CourseScheduleVO {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime endTime;
 
+    @Schema(description = "教室")
+    private String classroom;
+
     @Schema(description = "最大人数")
-    private Integer maxPeople;
+    private Integer maxCapacity;
 
     @Schema(description = "已约人数")
-    private Integer currentPeople;
-
-    @Schema(description = "剩余名额")
-    private Integer remainingPeople;
+    private Integer currentCount;
 
     @Schema(description = "状态: 0-未开始, 1-进行中, 2-已结束, 3-已取消")
     private Integer status;
 
-    @Schema(description = "状态描述")
-    private String statusDesc;
+    @Schema(description = "备注")
+    private String remark;
+
+    @Schema(description = "创建时间")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime createTime;
 }

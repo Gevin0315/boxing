@@ -30,7 +30,13 @@
       "Bash(npx vue-tsc:*)",
       "Bash(npx skills add:*)",
       "Bash(node:*)",
-      "Bash(git reset:*)"
+      "Bash(git reset:*)",
+      "Bash(source:*)",
+      "Bash(nvm use:*)",
+      "Bash(npm install:*)",
+      "Bash(git checkout:*)",
+      "Bash(mysql:*)",
+      "Bash(git -C /Users/gevinlee/code/boxing status)"
     ]
   }
 }
