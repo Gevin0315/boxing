@@ -20,6 +20,15 @@ export interface TrainingRecord {
   createTime?: string
 }
 
+/** 签到记录查询参数 */
+export interface TrainingRecordQuery {
+  current?: number
+  size?: number
+  memberId?: number
+  scheduleId?: number
+  status?: number
+}
+
 const mapTraining = (item: any): TrainingRecord => ({
   id: item.id,
   scheduleId: item.scheduleId,
@@ -36,6 +45,25 @@ const mapTraining = (item: any): TrainingRecord => ({
   remark: item.remark || '',
   createTime: item.createTime
 })
+
+/** 分页查询签到记录 */
+export async function pageTrainingRecord(query: TrainingRecordQuery) {
+  const data = await request.get<{ records: any[]; total: number; current: number; size: number }>('/training-record/page', {
+    params: {
+      current: query.current || 1,
+      size: query.size || 10,
+      memberId: query.memberId,
+      scheduleId: query.scheduleId,
+      status: query.status
+    }
+  })
+  return {
+    rows: (data.records || []).map(mapTraining),
+    total: data.total || 0,
+    current: data.current || 1,
+    size: data.size || 10
+  }
+}
 
 /** 查询签到记录列表 */
 export async function listTrainingRecord(query: any) {

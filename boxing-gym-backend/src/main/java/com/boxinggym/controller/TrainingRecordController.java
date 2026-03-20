@@ -1,10 +1,12 @@
 package com.boxinggym.controller;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.boxinggym.common.BusinessException;
 import com.boxinggym.common.Result;
 import com.boxinggym.dto.BatchDeleteDTO;
 import com.boxinggym.dto.CheckinWithCardDTO;
 import com.boxinggym.dto.MemberCardVO;
+import com.boxinggym.dto.TrainingRecordQueryDTO;
 import com.boxinggym.entity.Course;
 import com.boxinggym.entity.Member;
 import com.boxinggym.enums.CourseTypeEnum;
@@ -18,6 +20,7 @@ import com.boxinggym.service.TrainingRecordService;
 import com.boxinggym.service.MemberService;
 import com.boxinggym.service.SysUserService;
 import com.boxinggym.utils.ResponseAssembler;
+import com.boxinggym.vo.TrainingRecordVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -69,6 +72,16 @@ public class TrainingRecordController {
             3, "高级"
     );
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
+
+    /**
+     * 分页查询签到记录
+     */
+    @Operation(summary = "分页查询签到记录")
+    @GetMapping("/page")
+    public Result<Page<TrainingRecordVO>> page(TrainingRecordQueryDTO query) {
+        Page<TrainingRecordVO> page = trainingRecordService.page(query);
+        return Result.success(page);
+    }
 
     /**
      * 查询所有签到记录
