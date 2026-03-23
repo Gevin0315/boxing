@@ -16,9 +16,6 @@ public class CardUsageRecordVO {
     @Schema(description = "主键ID")
     private Long id;
 
-    @Schema(description = "记录编号")
-    private String recordNo;
-
     @Schema(description = "会员卡ID")
     private Long memberCardId;
 

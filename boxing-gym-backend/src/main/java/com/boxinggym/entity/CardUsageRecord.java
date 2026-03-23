@@ -25,11 +25,6 @@ public class CardUsageRecord implements Serializable {
     private Long id;
 
     /**
-     * 记录编号
-     */
-    private String recordNo;
-
-    /**
      * 会员卡ID
      */
     private Long memberCardId;

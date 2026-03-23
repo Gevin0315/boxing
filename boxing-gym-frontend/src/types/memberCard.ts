@@ -129,7 +129,6 @@ export interface VoidCardDTO {
 /** 卡片使用记录 */
 export interface CardUsageRecord {
   id: number
-  recordNo: string
   memberCardId: number
   cardNo?: string
   memberId: number
