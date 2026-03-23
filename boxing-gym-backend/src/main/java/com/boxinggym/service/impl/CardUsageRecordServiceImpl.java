@@ -45,7 +45,6 @@ public class CardUsageRecordServiceImpl extends ServiceImpl<CardUsageRecordMappe
                             Long scheduleId, Long trainingRecordId,
                             Integer sessionsBefore, Integer sessionsAfter, String remark) {
         CardUsageRecord record = new CardUsageRecord();
-        record.setRecordNo("CU" + LocalDateTime.now().format(RECORD_NO_FORMATTER));
         record.setMemberCardId(memberCardId);
         record.setMemberId(memberId);
         record.setUsageType(usageType);

@@ -54,7 +54,6 @@ public class MemberCardServiceImpl extends ServiceImpl<MemberCardMapper, MemberC
         }
         // 创建会员卡
         MemberCard memberCard = new MemberCard();
-        memberCard.setCardNo("MC" + LocalDateTime.now().format(CARD_NO_FORMATTER));
         memberCard.setMemberId(dto.getMemberId());
         memberCard.setCardId(dto.getCardId());
         memberCard.setCardCategory(cardDef.getCardCategory());
