@@ -154,3 +154,28 @@ export interface CardUsageRecordQuery {
   memberCardId?: number
   memberId?: number
 }
+
+/** 购卡结果 */
+export interface PurchaseCardResult {
+  cardId?: number
+  orderId: number
+  status: 'completed' | 'pending'
+}
+
+/** 支付结果 */
+export interface PaymentResult {
+  cardId?: number
+  status: string
+}
+
+/** 待支付订单 */
+export interface PendingOrder {
+  orderId: number
+  orderNo: string
+  cardId: number
+  cardName: string
+  amount: number
+  payMethod: number
+  payMethodDesc: string
+  createTime: string
+}

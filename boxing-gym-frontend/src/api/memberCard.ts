@@ -5,6 +5,9 @@ import request from '@/utils/request'
 import type {
   MemberCard,
   PurchaseCardDTO,
+  PurchaseCardResult,
+  PaymentResult,
+  PendingOrder,
   ActivateCardDTO,
   VoidCardDTO,
   CardUsageRecord,
@@ -16,7 +19,7 @@ const BASE_URL = '/member-card'
 
 /** 购买会员卡 */
 export function purchaseCard(data: PurchaseCardDTO) {
-  return request.post<ApiResponse<number>>(`${BASE_URL}/purchase`, data)
+  return request.post<ApiResponse<PurchaseCardResult>>(`${BASE_URL}/purchase`, data)
 }
 
 /** 激活会员卡 */
@@ -64,5 +67,20 @@ export function validateCardForCheckin(memberCardId: number, memberId: number, i
   return request.get<ApiResponse<boolean>>(`${BASE_URL}/${memberCardId}/validate-checkin`, {
     params: { memberId, isPrivateClass },
   })
+}
+
+/** 确认支付 */
+export function confirmPayment(orderId: number) {
+  return request.post<ApiResponse<PaymentResult>>(`${BASE_URL}/payment/confirm`, { orderId })
+}
+
+/** 取消订单 */
+export function cancelOrder(orderId: number, reason?: string) {
+  return request.post<ApiResponse<PaymentResult>>(`${BASE_URL}/payment/cancel`, { orderId, reason })
+}
+
+/** 获取会员待支付订单 */
+export function getPendingOrders(memberId: number) {
+  return request.get<ApiResponse<PendingOrder[]>>(`${BASE_URL}/payment/pending`, { params: { memberId } })
 }
 
