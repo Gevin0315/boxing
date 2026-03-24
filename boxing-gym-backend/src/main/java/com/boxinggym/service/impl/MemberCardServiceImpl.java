@@ -9,12 +9,14 @@ import com.boxinggym.enums.*;
 import com.boxinggym.mapper.*;
 import com.boxinggym.service.*;
 import com.boxinggym.utils.SecurityUtil;
+import com.boxinggym.vo.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -38,7 +40,7 @@ public class MemberCardServiceImpl extends ServiceImpl<MemberCardMapper, MemberC
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public Long purchaseCard(PurchaseCardDTO dto) {
+    public PurchaseCardResultVO purchaseCard(PurchaseCardDTO dto) {
         // 获取会员
         Member member = memberMapper.selectById(dto.getMemberId());
         if (member == null) {
@@ -52,50 +54,36 @@ public class MemberCardServiceImpl extends ServiceImpl<MemberCardMapper, MemberC
         if (cardDef.getStatus() != 1) {
             throw new BusinessException("该卡片已停售");
         }
-        // 创建会员卡
-        MemberCard memberCard = new MemberCard();
-        memberCard.setMemberId(dto.getMemberId());
-        memberCard.setCardId(dto.getCardId());
-        memberCard.setCardCategory(cardDef.getCardCategory());
-        memberCard.setCardType(cardDef.getCardType());
-        memberCard.setStatus(CardStatusEnum.INACTIVE.getCode());
-        // 设置次数（次卡）
-        if (cardDef.getSessionCount() != null) {
-            memberCard.setTotalSessions(cardDef.getSessionCount());
-            memberCard.setRemainingSessions(cardDef.getSessionCount());
+
+        BigDecimal paidAmount = dto.getPaidAmount() != null ? dto.getPaidAmount() : cardDef.getPrice();
+
+        PurchaseCardResultVO result = new PurchaseCardResultVO();
+
+        // 判断支付方式：现金(3)/刷卡(4)即时完成，微信(1)/支付宝(2)待支付
+        boolean immediatePayment = dto.getPayMethod() == 3 || dto.getPayMethod() == 4;
+
+        if (immediatePayment) {
+            // 即时完成：创建卡片和订单
+            MemberCard memberCard = createMemberCard(dto.getMemberId(), cardDef, dto.getRemark());
+            FinanceOrder order = createFinanceOrder(dto.getMemberId(), paidAmount, dto.getPayMethod(),
+                    cardDef.getCardName(), memberCard.getId(), dto.getCardId());
+            memberCard.setOrderId(order.getId());
+            updateById(memberCard);
+
+            result.setCardId(memberCard.getId());
+            result.setOrderId(order.getId());
+            result.setStatus("completed");
+        } else {
+            // 待支付：只创建订单
+            FinanceOrder order = createPendingOrder(dto.getMemberId(), paidAmount, dto.getPayMethod(),
+                    cardDef.getCardName(), dto.getCardId());
+
+            result.setCardId(null);
+            result.setOrderId(order.getId());
+            result.setStatus("pending");
         }
-        memberCard.setPurchaseTime(LocalDateTime.now());
-        // 设置激活截止日期
-        int activationDays = cardDef.getActivationDeadlineDays() != null ? cardDef.getActivationDeadlineDays() : 30;
-        memberCard.setActivationDeadline(LocalDate.now().plusDays(activationDays));
-        memberCard.setRemark(dto.getRemark());
-        memberCard.setCreateTime(LocalDateTime.now());
-        memberCard.setUpdateTime(LocalDateTime.now());
-        save(memberCard);
-        // 创建订单
-        FinanceOrder order = new FinanceOrder();
-        order.setOrderNo("FO" + LocalDateTime.now().format(CARD_NO_FORMATTER));
-        order.setMemberId(dto.getMemberId());
-        order.setAmount(dto.getPaidAmount() != null ? dto.getPaidAmount() : cardDef.getPrice());
-        order.setType(OrderTypeEnum.RECHARGE.getCode());
-        order.setPayMethod(dto.getPayMethod());
-        order.setRemark("购买" + cardDef.getCardName());
-        order.setPaidAmount(dto.getPaidAmount() != null ? dto.getPaidAmount() : cardDef.getPrice());
-        order.setPaymentStatus(1);
-        order.setMemberCardId(memberCard.getId());
-        order.setOrderCategory(OrderCategoryEnum.PURCHASE_CARD.getCode());
-        order.setCreateTime(LocalDateTime.now());
-        order.setUpdateTime(LocalDateTime.now());
-        try {
-            order.setCreateBy(SecurityUtil.getCurrentUserId());
-        } catch (Exception e) {
-            log.warn("获取当前用户ID失败", e);
-        }
-        financeOrderMapper.insert(order);
-        // 更新会员卡的订单ID
-        memberCard.setOrderId(order.getId());
-        updateById(memberCard);
-        return memberCard.getId();
+
+        return result;
     }
 
     @Override
@@ -379,6 +367,232 @@ public class MemberCardServiceImpl extends ServiceImpl<MemberCardMapper, MemberC
             }
         }
         return true;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public PaymentResultVO confirmPayment(ConfirmPaymentDTO dto) {
+        FinanceOrder order = financeOrderMapper.selectById(dto.getOrderId());
+        if (order == null) {
+            throw new BusinessException("订单不存在");
+        }
+
+        // 验证订单类型
+        if (!OrderCategoryEnum.PURCHASE_CARD.getCode().equals(order.getOrderCategory())) {
+            throw new BusinessException("非购卡订单");
+        }
+
+        // 验证订单状态（幂等性处理）
+        if (PaymentStatusEnum.PAID.getCode().equals(order.getPaymentStatus())) {
+            throw new BusinessException("订单已支付，请勿重复确认");
+        }
+        if (PaymentStatusEnum.CANCELLED.getCode().equals(order.getPaymentStatus())) {
+            throw new BusinessException("订单已取消");
+        }
+        if (!PaymentStatusEnum.PENDING.getCode().equals(order.getPaymentStatus())) {
+            throw new BusinessException("订单状态不正确");
+        }
+
+        // 验证卡片定义
+        MembershipCard cardDef = membershipCardService.getById(order.getCardId());
+        if (cardDef == null) {
+            throw new BusinessException("卡片定义不存在");
+        }
+        if (cardDef.getStatus() != 1) {
+            throw new BusinessException("该卡片已停售");
+        }
+
+        // 创建会员卡
+        MemberCard memberCard = createMemberCard(order.getMemberId(), cardDef, "支付确认后创建");
+
+        // 更新订单
+        order.setMemberCardId(memberCard.getId());
+        order.setPaymentStatus(PaymentStatusEnum.PAID.getCode());
+        order.setPaidAmount(order.getAmount());
+        order.setUpdateTime(LocalDateTime.now());
+        financeOrderMapper.updateById(order);
+
+        // 关联双向ID
+        memberCard.setOrderId(order.getId());
+        updateById(memberCard);
+
+        PaymentResultVO result = new PaymentResultVO();
+        result.setCardId(memberCard.getId());
+        result.setStatus("completed");
+        return result;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public PaymentResultVO cancelOrder(CancelOrderDTO dto) {
+        FinanceOrder order = financeOrderMapper.selectById(dto.getOrderId());
+        if (order == null) {
+            throw new BusinessException("订单不存在");
+        }
+
+        // 验证订单类型
+        if (!OrderCategoryEnum.PURCHASE_CARD.getCode().equals(order.getOrderCategory())) {
+            throw new BusinessException("非购卡订单");
+        }
+
+        // 验证订单状态
+        if (PaymentStatusEnum.PAID.getCode().equals(order.getPaymentStatus())) {
+            throw new BusinessException("已支付订单无法取消");
+        }
+        if (PaymentStatusEnum.CANCELLED.getCode().equals(order.getPaymentStatus())) {
+            throw new BusinessException("订单已取消");
+        }
+        if (!PaymentStatusEnum.PENDING.getCode().equals(order.getPaymentStatus())) {
+            throw new BusinessException("订单状态不正确");
+        }
+
+        // 更新订单状态
+        order.setPaymentStatus(PaymentStatusEnum.CANCELLED.getCode());
+        if (dto.getReason() != null) {
+            order.setRemark(order.getRemark() + " | 取消原因: " + dto.getReason());
+        }
+        order.setUpdateTime(LocalDateTime.now());
+        financeOrderMapper.updateById(order);
+
+        PaymentResultVO result = new PaymentResultVO();
+        result.setStatus("cancelled");
+        return result;
+    }
+
+    @Override
+    public List<PendingOrderVO> getPendingOrders(Long memberId) {
+        LambdaQueryWrapper<FinanceOrder> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(FinanceOrder::getMemberId, memberId)
+                .eq(FinanceOrder::getPaymentStatus, PaymentStatusEnum.PENDING.getCode())
+                .eq(FinanceOrder::getOrderCategory, OrderCategoryEnum.PURCHASE_CARD.getCode())
+                .orderByDesc(FinanceOrder::getCreateTime);
+        List<FinanceOrder> orders = financeOrderMapper.selectList(wrapper);
+
+        return orders.stream().map(order -> {
+            PendingOrderVO vo = new PendingOrderVO();
+            vo.setOrderId(order.getId());
+            vo.setOrderNo(order.getOrderNo());
+            vo.setCardId(order.getCardId());
+            vo.setAmount(order.getAmount());
+            vo.setPayMethod(order.getPayMethod());
+            vo.setCreateTime(order.getCreateTime());
+
+            // 获取卡片名称
+            MembershipCard cardDef = membershipCardService.getById(order.getCardId());
+            if (cardDef != null) {
+                vo.setCardName(cardDef.getCardName());
+            }
+
+            // 支付方式描述
+            try {
+                PayMethodEnum payMethod = PayMethodEnum.fromCode(order.getPayMethod());
+                vo.setPayMethodDesc(payMethod.getDescription());
+            } catch (IllegalArgumentException e) {
+                vo.setPayMethodDesc("未知");
+            }
+
+            return vo;
+        }).collect(Collectors.toList());
+    }
+
+    /**
+     * 创建会员卡
+     *
+     * @param memberId 会员ID
+     * @param cardDef  卡片定义
+     * @param remark   备注
+     * @return 创建的会员卡
+     */
+    private MemberCard createMemberCard(Long memberId, MembershipCard cardDef, String remark) {
+        MemberCard memberCard = new MemberCard();
+        memberCard.setMemberId(memberId);
+        memberCard.setCardId(cardDef.getId());
+        memberCard.setCardCategory(cardDef.getCardCategory());
+        memberCard.setCardType(cardDef.getCardType());
+        memberCard.setStatus(CardStatusEnum.INACTIVE.getCode());
+        if (cardDef.getSessionCount() != null) {
+            memberCard.setTotalSessions(cardDef.getSessionCount());
+            memberCard.setRemainingSessions(cardDef.getSessionCount());
+        }
+        memberCard.setPurchaseTime(LocalDateTime.now());
+        int activationDays = cardDef.getActivationDeadlineDays() != null ? cardDef.getActivationDeadlineDays() : 30;
+        memberCard.setActivationDeadline(LocalDate.now().plusDays(activationDays));
+        memberCard.setRemark(remark);
+        memberCard.setCreateTime(LocalDateTime.now());
+        memberCard.setUpdateTime(LocalDateTime.now());
+        save(memberCard);
+        return memberCard;
+    }
+
+    /**
+     * 创建已支付订单（即时完成）
+     *
+     * @param memberId    会员ID
+     * @param amount      金额
+     * @param payMethod   支付方式
+     * @param cardName    卡片名称
+     * @param memberCardId 会员卡ID
+     * @param cardDefId   卡片定义ID
+     * @return 创建的订单
+     */
+    private FinanceOrder createFinanceOrder(Long memberId, BigDecimal amount, Integer payMethod,
+            String cardName, Long memberCardId, Long cardDefId) {
+        FinanceOrder order = new FinanceOrder();
+        order.setOrderNo("FO" + LocalDateTime.now().format(CARD_NO_FORMATTER));
+        order.setMemberId(memberId);
+        order.setAmount(amount);
+        order.setType(OrderTypeEnum.RECHARGE.getCode());
+        order.setPayMethod(payMethod);
+        order.setRemark("购买" + cardName);
+        order.setPaidAmount(amount);
+        order.setPaymentStatus(PaymentStatusEnum.PAID.getCode());
+        order.setMemberCardId(memberCardId);
+        order.setCardId(cardDefId);
+        order.setOrderCategory(OrderCategoryEnum.PURCHASE_CARD.getCode());
+        order.setCreateTime(LocalDateTime.now());
+        order.setUpdateTime(LocalDateTime.now());
+        try {
+            order.setCreateBy(SecurityUtil.getCurrentUserId());
+        } catch (Exception e) {
+            log.warn("获取当前用户ID失败", e);
+        }
+        financeOrderMapper.insert(order);
+        return order;
+    }
+
+    /**
+     * 创建待支付订单
+     *
+     * @param memberId  会员ID
+     * @param amount    金额
+     * @param payMethod 支付方式
+     * @param cardName  卡片名称
+     * @param cardDefId 卡片定义ID
+     * @return 创建的订单
+     */
+    private FinanceOrder createPendingOrder(Long memberId, BigDecimal amount, Integer payMethod,
+            String cardName, Long cardDefId) {
+        FinanceOrder order = new FinanceOrder();
+        order.setOrderNo("FO" + LocalDateTime.now().format(CARD_NO_FORMATTER));
+        order.setMemberId(memberId);
+        order.setAmount(amount);
+        order.setType(OrderTypeEnum.RECHARGE.getCode());
+        order.setPayMethod(payMethod);
+        order.setRemark("购买" + cardName);
+        order.setPaidAmount(BigDecimal.ZERO);
+        order.setPaymentStatus(PaymentStatusEnum.PENDING.getCode());
+        order.setMemberCardId(null);
+        order.setCardId(cardDefId);
+        order.setOrderCategory(OrderCategoryEnum.PURCHASE_CARD.getCode());
+        order.setCreateTime(LocalDateTime.now());
+        order.setUpdateTime(LocalDateTime.now());
+        try {
+            order.setCreateBy(SecurityUtil.getCurrentUserId());
+        } catch (Exception e) {
+            log.warn("获取当前用户ID失败", e);
+        }
+        financeOrderMapper.insert(order);
+        return order;
     }
 
     /**
