@@ -87,6 +87,11 @@ public class FinanceOrder implements Serializable {
     private Long memberCardId;
 
     /**
+     * 关联卡片定义ID（待支付订单使用）
+     */
+    private Long cardId;
+
+    /**
      * 订单分类: 1-储值充值, 2-购卡, 3-课程消费
      */
     private Integer orderCategory;
