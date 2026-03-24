@@ -5,6 +5,9 @@ import com.boxinggym.common.Result;
 import com.boxinggym.dto.*;
 import com.boxinggym.service.CardUsageRecordService;
 import com.boxinggym.service.MemberCardService;
+import com.boxinggym.vo.PaymentResultVO;
+import com.boxinggym.vo.PendingOrderVO;
+import com.boxinggym.vo.PurchaseCardResultVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -28,8 +31,30 @@ public class MemberCardController {
 
     @Operation(summary = "购买会员卡")
     @PostMapping("/purchase")
-    public Result<Long> purchaseCard(@Valid @RequestBody PurchaseCardDTO dto) {
-        return Result.success(memberCardService.purchaseCard(dto));
+    public Result<PurchaseCardResultVO> purchaseCard(@Valid @RequestBody PurchaseCardDTO dto) {
+        PurchaseCardResultVO result = memberCardService.purchaseCard(dto);
+        return Result.success(result);
+    }
+
+    @Operation(summary = "确认支付")
+    @PostMapping("/payment/confirm")
+    public Result<PaymentResultVO> confirmPayment(@Valid @RequestBody ConfirmPaymentDTO dto) {
+        PaymentResultVO result = memberCardService.confirmPayment(dto);
+        return Result.success(result);
+    }
+
+    @Operation(summary = "取消订单")
+    @PostMapping("/payment/cancel")
+    public Result<PaymentResultVO> cancelOrder(@Valid @RequestBody CancelOrderDTO dto) {
+        PaymentResultVO result = memberCardService.cancelOrder(dto);
+        return Result.success(result);
+    }
+
+    @Operation(summary = "获取会员待支付订单")
+    @GetMapping("/payment/pending")
+    public Result<List<PendingOrderVO>> getPendingOrders(@RequestParam Long memberId) {
+        List<PendingOrderVO> orders = memberCardService.getPendingOrders(memberId);
+        return Result.success(orders);
     }
 
     @Operation(summary = "激活会员卡")
