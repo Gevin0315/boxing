@@ -2,6 +2,9 @@ package com.boxinggym.service;
 
 import com.boxinggym.dto.*;
 import com.boxinggym.entity.MemberCard;
+import com.boxinggym.vo.PaymentResultVO;
+import com.boxinggym.vo.PendingOrderVO;
+import com.boxinggym.vo.PurchaseCardResultVO;
 
 import java.util.List;
 
@@ -14,9 +17,33 @@ public interface MemberCardService {
      * 购买会员卡
      *
      * @param dto 购卡请求
-     * @return 会员卡ID
+     * @return 购卡结果
      */
-    Long purchaseCard(PurchaseCardDTO dto);
+    PurchaseCardResultVO purchaseCard(PurchaseCardDTO dto);
+
+    /**
+     * 确认支付
+     *
+     * @param dto 确认支付请求
+     * @return 支付结果
+     */
+    PaymentResultVO confirmPayment(ConfirmPaymentDTO dto);
+
+    /**
+     * 取消订单
+     *
+     * @param dto 取消订单请求
+     * @return 取消结果
+     */
+    PaymentResultVO cancelOrder(CancelOrderDTO dto);
+
+    /**
+     * 获取会员待支付订单
+     *
+     * @param memberId 会员ID
+     * @return 待支付订单列表
+     */
+    List<PendingOrderVO> getPendingOrders(Long memberId);
 
     /**
      * 激活会员卡
