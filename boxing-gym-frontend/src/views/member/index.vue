@@ -36,6 +36,7 @@ const dialogVisible = ref(false)
 const dialogTitle = ref('')
 const memberId = ref<number>()
 const rechargeVisible = ref(false)
+const rechargeMode = ref<'recharge' | 'deduct'>('recharge') // 充值或扣费模式
 const rechargeForm = reactive({
   memberId: undefined as number | undefined,
   amount: 0
@@ -123,6 +124,7 @@ const handleStatusChange = async (row: Member) => {
 }
 
 const handleRecharge = (row: Member) => {
+  rechargeMode.value = 'recharge'
   rechargeForm.memberId = row.id
   rechargeForm.amount = 0
   rechargeVisible.value = true
@@ -130,39 +132,31 @@ const handleRecharge = (row: Member) => {
 
 const handleRechargeSubmit = async () => {
   if (!rechargeForm.amount || rechargeForm.amount <= 0) {
-    ElMessage.warning('请输入有效的充值金额')
+    ElMessage.warning(rechargeMode.value === 'recharge' ? '请输入有效的充值金额' : '请输入有效的扣费金额')
     return
   }
   try {
-    await memberRecharge(rechargeForm.memberId!, rechargeForm.amount)
-    ElMessage.success('充值成功')
+    if (rechargeMode.value === 'recharge') {
+      await memberRecharge(rechargeForm.memberId!, rechargeForm.amount)
+      ElMessage.success('充值成功')
+    } else {
+      await memberDeduct(rechargeForm.memberId!, rechargeForm.amount)
+      ElMessage.success('扣费成功')
+    }
     rechargeVisible.value = false
     getList()
   } catch (error) {
-    console.error('Failed to recharge:', error)
+    console.error('Failed to submit:', error)
   }
 }
 
 const handleDeduct = (row: Member) => {
+  rechargeMode.value = 'deduct'
   rechargeForm.memberId = row.id
   rechargeForm.amount = 0
   rechargeVisible.value = true
 }
 
-const handleDeductSubmit = async () => {
-  if (!rechargeForm.amount || rechargeForm.amount <= 0) {
-    ElMessage.warning('请输入有效的扣费金额')
-    return
-  }
-  try {
-    await memberDeduct(rechargeForm.memberId!, rechargeForm.amount)
-    ElMessage.success('扣费成功')
-    rechargeVisible.value = false
-    getList()
-  } catch (error) {
-    console.error('Failed to deduct:', error)
-  }
-}
 
 const handleDialogClose = async () => {
   dialogVisible.value = false
@@ -439,17 +433,17 @@ const handleViewRecords = async (card: MemberCard) => {
     <!-- 充值/扣费弹窗 -->
     <el-dialog
       v-model="rechargeVisible"
-      title="会员充值"
+      :title="rechargeMode === 'recharge' ? '会员充值' : '会员扣费'"
       width="400px"
     >
       <el-form label-width="80px">
-        <el-form-item label="充值金额">
+        <el-form-item :label="rechargeMode === 'recharge' ? '充值金额' : '扣费金额'">
           <el-input-number v-model="rechargeForm.amount" :min="0" :precision="2" :step="100" style="width: 100%" />
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="rechargeVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleRechargeSubmit">确定</el-button>
+        <el-button :type="rechargeMode === 'recharge' ? 'primary' : 'warning'" @click="handleRechargeSubmit">确定</el-button>
       </template>
     </el-dialog>
 
