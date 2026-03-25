@@ -133,6 +133,7 @@ Remove from el-table:
   v-model="cardListDialogVisible"
   :title="`${currentMemberName} 的会员卡`"
   width="600px"
+  @closed="handleCardListDialogClose"
 >
   <!-- Toolbar -->
   <div class="dialog-toolbar" style="margin-bottom: 16px;">
@@ -164,7 +165,12 @@ Remove from el-table:
     </el-table-column>
     <el-table-column label="剩余" width="80">
       <template #default="{ row }">
-        {{ formatRemaining(row) }}
+        <template v-if="row.cardCategory === CardCategory.GROUP_TIME">
+          {{ row.remainingDays ?? '-' }}天
+        </template>
+        <template v-else>
+          {{ row.remainingSessions ?? 0 }}次
+        </template>
       </template>
     </el-table-column>
     <el-table-column prop="purchaseTime" label="购买日期" width="110" />
@@ -172,10 +178,20 @@ Remove from el-table:
     <el-table-column prop="expireDate" label="到期日期" width="110" />
     <el-table-column label="操作" width="150" fixed="right">
       <template #default="{ row }">
-        <el-button v-if="row.canBeActivated" link type="primary" @click="handleActivateCard(row)">
+        <el-button
+          v-if="row.canBeActivated"
+          link
+          type="primary"
+          @click="handleActivateCard(row, currentMemberId!)"
+        >
           激活
         </el-button>
-        <el-button v-if="row.status === MemberCardStatus.ACTIVE" link type="danger" @click="handleVoidCard(row)">
+        <el-button
+          v-if="row.status === MemberCardStatus.ACTIVE"
+          link
+          type="danger"
+          @click="handleVoidCard(row, currentMemberId!)"
+        >
           作废
         </el-button>
         <el-button link type="primary" @click="viewUsageRecords(row)">
@@ -204,14 +220,30 @@ const openCardListDialog = async (member: Member) => {
   cardListLoading.value = false
 }
 
-const openPurchaseCard = () => {
+const handleCardListDialogClose = () => {
+  // Keep cached cards for faster reopen, just reset loading state
+  cardListLoading.value = false
+}
+
+const openPurchaseCard = async () => {
   // Set member context for purchase
-  purchaseCardForm.memberId = currentMemberId.value
+  purchaseCardForm.memberId = currentMemberId.value!
   purchaseCardForm.cardId = undefined
   purchaseCardForm.payMethod = 3
   purchaseCardForm.paidAmount = 0
   purchaseCardForm.remark = ''
-  loadAvailableCards()
+
+  // Load available cards using existing pattern
+  cardsLoading.value = true
+  try {
+    availableCards.value = await getAvailableCards()
+  } catch (error) {
+    console.error('Failed to load available cards:', error)
+    availableCards.value = []
+  } finally {
+    cardsLoading.value = false
+  }
+
   purchaseCardVisible.value = true
 }
 ```
@@ -220,13 +252,17 @@ const openPurchaseCard = () => {
 
 - `memberCardsMap` - Map storing cards per member
 - `loadMemberCards(memberId)` - Load cards for a member
-- `handleActivateCard()`, `handleVoidCard()`, `viewUsageRecords()` - Existing action handlers
+- `handleActivateCard(card, memberId)` - Existing action handler (pass `currentMemberId!` as second arg)
+- `handleVoidCard(card, memberId)` - Existing action handler (pass `currentMemberId!` as second arg)
+- `viewUsageRecords(card)` - Existing action handler
 - `handlePurchaseCardSubmit()` - Existing purchase submit (already refreshes card list)
 - `purchaseCardVisible`, `purchaseCardForm` - Existing purchase dialog state
+- `availableCards`, `cardsLoading` - Existing refs for available cards loading
+- `getAvailableCards()` - Existing API call from `@/api/membershipCard`
 - Usage records drawer - No changes
-- `formatRemaining()` - Existing helper for remaining sessions/days
-- `MEMBER_CARD_STATUS_MAP`, `MEMBER_CARD_STATUS_TAG_TYPE`, `CARD_CATEGORY_MAP` - Existing constants
+- `MEMBER_CARD_STATUS_MAP`, `MEMBER_CARD_STATUS_TAG_TYPE`, `CARD_CATEGORY_MAP`, `CardCategory` - Existing constants/types
 - `MemberCardStatus` - Existing enum
+- `Plus`, `CreditCard` icons - Already imported from `@element-plus/icons-vue`
 
 ## Success Criteria
 
