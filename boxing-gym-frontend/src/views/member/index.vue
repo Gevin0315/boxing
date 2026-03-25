@@ -552,6 +552,101 @@ const handleViewRecords = async (card: MemberCard) => {
       </template>
     </el-dialog>
 
+    <!-- 卡片列表弹窗 -->
+    <el-dialog
+      v-model="cardListDialogVisible"
+      :title="`${currentMemberName} 的会员卡`"
+      width="600px"
+      @closed="handleCardListDialogClose"
+    >
+      <!-- Toolbar -->
+      <div style="margin-bottom: 16px;">
+        <el-button type="primary" @click="openPurchaseCardFromDialog">
+          <el-icon><Plus /></el-icon>
+          购买会员卡
+        </el-button>
+      </div>
+
+      <!-- Card Table -->
+      <el-table
+        :data="currentMemberCards"
+        v-loading="cardListLoading"
+        size="small"
+        border
+        :header-cell-style="{ background: '#f5f7fa' }"
+      >
+        <el-table-column prop="cardName" label="卡片名称" min-width="120" />
+        <el-table-column prop="cardCategory" label="类别" width="100">
+          <template #default="{ row }">
+            {{ CARD_CATEGORY_MAP[row.cardCategory] || row.cardCategoryDesc }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="status" label="状态" width="90">
+          <template #default="{ row }">
+            <el-tag :type="MEMBER_CARD_STATUS_TAG_TYPE[row.status]" size="small">
+              {{ MEMBER_CARD_STATUS_MAP[row.status] || row.statusDesc }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="剩余次数/有效期" width="140">
+          <template #default="{ row }">
+            <template v-if="row.cardCategory === CardCategory.GROUP_TIME">
+              {{ row.remainingDays ?? '-' }}天
+            </template>
+            <template v-else>
+              {{ row.remainingSessions ?? 0 }}次
+            </template>
+          </template>
+        </el-table-column>
+        <el-table-column prop="purchaseTime" label="购卡日期" width="110">
+          <template #default="{ row }">
+            {{ formatDate(row.purchaseTime) }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="activationTime" label="激活日期" width="110">
+          <template #default="{ row }">
+            {{ formatDate(row.activationTime) }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="expireDate" label="到期日期" width="110">
+          <template #default="{ row }">
+            {{ formatDate(row.expireDate) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="180" fixed="right">
+          <template #default="{ row }">
+            <el-button
+              v-if="row.canBeActivated"
+              type="success"
+              link
+              size="small"
+              @click="handleActivateCard(row, currentMemberId!)"
+            >
+              激活
+            </el-button>
+            <el-button
+              v-if="row.status === MemberCardStatus.ACTIVE"
+              type="danger"
+              link
+              size="small"
+              @click="handleVoidCard(row, currentMemberId!)"
+            >
+              作废
+            </el-button>
+            <el-button type="primary" link size="small" @click="handleViewRecords(row)">
+              <el-icon><View /></el-icon>
+              记录
+            </el-button>
+          </template>
+        </el-table-column>
+
+        <!-- Empty state -->
+        <template #empty>
+          <div class="no-cards">暂无持卡信息</div>
+        </template>
+      </el-table>
+    </el-dialog>
+
     <!-- 使用记录抽屉 -->
     <el-drawer
       v-model="drawerVisible"
