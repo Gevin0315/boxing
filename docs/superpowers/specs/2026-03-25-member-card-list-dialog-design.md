@@ -45,20 +45,20 @@ Keep all existing columns for feature parity:
 | 卡片名称 | Card name | auto |
 | 类别 | Card category (团课时长/团课次卡/私教次卡) | 100px |
 | 状态 | Status tag (未激活/正常/已过期/已作废) | 80px |
-| 剩余 | Remaining sessions or days | 80px |
-| 购买日期 | Purchase date | 110px |
-| 激活日期 | Activation date | 110px |
-| 到期日期 | Expiry date | 110px |
-| 操作 | Action buttons | 150px |
+| 剩余 | Remaining sessions or days | 140px |
+| 购卡日期 | Purchase date (formatted) | 110px |
+| 激活日期 | Activation date (formatted) | 110px |
+| 到期日期 | Expiry date (formatted) | 110px |
+| 操作 | Action buttons | 180px |
 
 ### Quick Actions
 
 1. **Purchase Card button** - Top of dialog, opens existing purchase dialog
 
 2. **Card row actions** (existing):
-   - 激活 (Activate) - shown when `card.canBeActivated` is true
-   - 作废 (Void) - shown when `card.status === MemberCardStatus.ACTIVE`
-   - 记录 (Records) - always visible
+   - 激活 (Activate) - `type="success"`, shown when `card.canBeActivated` is true
+   - 作废 (Void) - `type="danger"`, shown when `card.status === MemberCardStatus.ACTIVE`
+   - 记录 (Records) - `type="primary"`, always visible with View icon
 
 ### Empty State
 
@@ -147,9 +147,9 @@ Remove from el-table:
   <el-table
     :data="currentMemberCards"
     v-loading="cardListLoading"
+    size="small"
     :header-cell-style="{ background: '#f5f7fa' }"
   >
-    <!-- Reuse existing column definitions -->
     <el-table-column prop="cardName" label="卡片名称" />
     <el-table-column prop="cardCategory" label="类别" width="100">
       <template #default="{ row }">
@@ -163,7 +163,7 @@ Remove from el-table:
         </el-tag>
       </template>
     </el-table-column>
-    <el-table-column label="剩余" width="80">
+    <el-table-column label="剩余次数/有效期" width="140">
       <template #default="{ row }">
         <template v-if="row.cardCategory === CardCategory.GROUP_TIME">
           {{ row.remainingDays ?? '-' }}天
@@ -173,28 +173,43 @@ Remove from el-table:
         </template>
       </template>
     </el-table-column>
-    <el-table-column prop="purchaseTime" label="购买日期" width="110" />
-    <el-table-column prop="activationTime" label="激活日期" width="110" />
-    <el-table-column prop="expireDate" label="到期日期" width="110" />
-    <el-table-column label="操作" width="150" fixed="right">
+    <el-table-column prop="purchaseTime" label="购卡日期" width="110">
+      <template #default="{ row }">
+        {{ formatDate(row.purchaseTime) }}
+      </template>
+    </el-table-column>
+    <el-table-column prop="activationTime" label="激活日期" width="110">
+      <template #default="{ row }">
+        {{ formatDate(row.activationTime) }}
+      </template>
+    </el-table-column>
+    <el-table-column prop="expireDate" label="到期日期" width="110">
+      <template #default="{ row }">
+        {{ formatDate(row.expireDate) }}
+      </template>
+    </el-table-column>
+    <el-table-column label="操作" width="180" fixed="right">
       <template #default="{ row }">
         <el-button
           v-if="row.canBeActivated"
+          type="success"
           link
-          type="primary"
+          size="small"
           @click="handleActivateCard(row, currentMemberId!)"
         >
           激活
         </el-button>
         <el-button
           v-if="row.status === MemberCardStatus.ACTIVE"
-          link
           type="danger"
+          link
+          size="small"
           @click="handleVoidCard(row, currentMemberId!)"
         >
           作废
         </el-button>
-        <el-button link type="primary" @click="viewUsageRecords(row)">
+        <el-button type="primary" link size="small" @click="handleViewRecords(row)">
+          <el-icon><View /></el-icon>
           记录
         </el-button>
       </template>
@@ -252,17 +267,18 @@ const openPurchaseCard = async () => {
 
 - `memberCardsMap` - Map storing cards per member
 - `loadMemberCards(memberId)` - Load cards for a member
-- `handleActivateCard(card, memberId)` - Existing action handler (pass `currentMemberId!` as second arg)
-- `handleVoidCard(card, memberId)` - Existing action handler (pass `currentMemberId!` as second arg)
-- `viewUsageRecords(card)` - Existing action handler
+- `handleActivateCard(card, memberId)` - Existing action handler
+- `handleVoidCard(card, memberId)` - Existing action handler
+- `handleViewRecords(card)` - Existing action handler for viewing usage records
 - `handlePurchaseCardSubmit()` - Existing purchase submit (already refreshes card list)
 - `purchaseCardVisible`, `purchaseCardForm` - Existing purchase dialog state
 - `availableCards`, `cardsLoading` - Existing refs for available cards loading
 - `getAvailableCards()` - Existing API call from `@/api/membershipCard`
+- `formatDate(date)` - Existing local helper for date formatting
 - Usage records drawer - No changes
 - `MEMBER_CARD_STATUS_MAP`, `MEMBER_CARD_STATUS_TAG_TYPE`, `CARD_CATEGORY_MAP`, `CardCategory` - Existing constants/types
 - `MemberCardStatus` - Existing enum
-- `Plus`, `CreditCard` icons - Already imported from `@element-plus/icons-vue`
+- `Plus`, `CreditCard`, `View` icons - Already imported from `@element-plus/icons-vue`
 
 ## Success Criteria
 
