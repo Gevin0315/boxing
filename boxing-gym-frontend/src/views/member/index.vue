@@ -424,89 +424,17 @@ const handleViewRecords = async (card: MemberCard) => {
       stripe
       border
       :row-key="(row) => row.id"
-      :expand-row-keys="expandedRowKeys"
-      @expand-change="handleExpandChange"
     >
-      <!-- 展开列 -->
-      <el-table-column type="expand" width="50">
+      <!-- 持卡列 -->
+      <el-table-column label="持卡" width="60" align="center">
         <template #default="{ row }">
-          <div class="expand-content" v-loading="cardsLoadingMap.get(row.id!)">
-            <div v-if="memberCardsMap.get(row.id!)?.length" class="cards-table-wrapper">
-              <div class="cards-header">
-                <el-icon><CreditCard /></el-icon>
-                <span>持卡信息 ({{ memberCardsMap.get(row.id!)?.length || 0 }}张)</span>
-              </div>
-              <el-table :data="memberCardsMap.get(row.id!)" size="small" border>
-                <el-table-column prop="cardName" label="卡名称" min-width="120" />
-                <el-table-column prop="cardCategory" label="卡分类" width="100">
-                  <template #default="{ row: card }">
-                    {{ CARD_CATEGORY_MAP[card.cardCategory] || card.cardCategoryDesc }}
-                  </template>
-                </el-table-column>
-                <el-table-column prop="status" label="状态" width="90">
-                  <template #default="{ row: card }">
-                    <el-tag :type="MEMBER_CARD_STATUS_TAG_TYPE[card.status]" size="small">
-                      {{ MEMBER_CARD_STATUS_MAP[card.status] || card.statusDesc }}
-                    </el-tag>
-                  </template>
-                </el-table-column>
-                <el-table-column label="剩余次数/有效期" width="140">
-                  <template #default="{ row: card }">
-                    <template v-if="card.cardCategory === CardCategory.GROUP_TIME">
-                      {{ card.remainingDays ?? '-' }}天
-                    </template>
-                    <template v-else>
-                      {{ card.remainingSessions ?? 0 }}次
-                    </template>
-                  </template>
-                </el-table-column>
-                <el-table-column prop="purchaseTime" label="购卡日期" width="110">
-                  <template #default="{ row: card }">
-                    {{ formatDate(card.purchaseTime) }}
-                  </template>
-                </el-table-column>
-                <el-table-column prop="activationTime" label="激活日期" width="110">
-                  <template #default="{ row: card }">
-                    {{ formatDate(card.activationTime) }}
-                  </template>
-                </el-table-column>
-                <el-table-column prop="expireDate" label="到期日期" width="110">
-                  <template #default="{ row: card }">
-                    {{ formatDate(card.expireDate) }}
-                  </template>
-                </el-table-column>
-                <el-table-column label="操作" width="180" fixed="right">
-                  <template #default="{ row: card }">
-                    <el-button
-                      v-if="card.canBeActivated"
-                      type="success"
-                      link
-                      size="small"
-                      @click="handleActivateCard(card, row.id)"
-                    >
-                      激活
-                    </el-button>
-                    <el-button
-                      v-if="card.status === MemberCardStatus.ACTIVE"
-                      type="danger"
-                      link
-                      size="small"
-                      @click="handleVoidCard(card, row.id)"
-                    >
-                      作废
-                    </el-button>
-                    <el-button type="primary" link size="small" @click="handleViewRecords(card)">
-                      <el-icon><View /></el-icon>
-                      记录
-                    </el-button>
-                  </template>
-                </el-table-column>
-              </el-table>
-            </div>
-            <div v-else-if="!cardsLoadingMap.get(row.id!)" class="no-cards">
-              暂无持卡信息
-            </div>
-          </div>
+          <el-button
+            link
+            type="primary"
+            @click="openCardListDialog(row)"
+          >
+            <el-icon><CreditCard /></el-icon>
+          </el-button>
         </template>
       </el-table-column>
       <el-table-column type="index" label="序号" width="60" align="center" />
