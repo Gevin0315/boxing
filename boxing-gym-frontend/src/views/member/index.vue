@@ -384,7 +384,7 @@ const handleCardListRefresh = () => {
 /**
  * 格式化日期
  */
-export const formatDate = (date: string | undefined) => {
+const formatDate = (date: string | undefined) => {
   if (!date) return '-'
   return date.split('T')[0] || date.split(' ')[0]
 }

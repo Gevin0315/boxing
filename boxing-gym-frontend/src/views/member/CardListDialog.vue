@@ -2,7 +2,8 @@
 import { ref, computed, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, View } from '@element-plus/icons-vue'
-import { getMemberCards, activateCard, voidCard, getCardUsageRecords, getAvailableCards, purchaseCard } from '@/api/memberCard'
+import { getMemberCards, activateCard, voidCard, getCardUsageRecords, purchaseCard } from '@/api/memberCard'
+import { getAvailableCards } from '@/api/membershipCard'
 import {
   MemberCardStatus,
   MEMBER_CARD_STATUS_MAP,
