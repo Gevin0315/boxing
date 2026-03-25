@@ -68,19 +68,16 @@ const currentMemberCards = computed(() => {
   return cards.value
 })
 
-/** 监听弹窗显示状态 */
-watch(() => props.visible, async (newVal) => {
-  if (newVal && props.memberId) {
-    await loadCards()
+/** 监听弹窗显示状态和会员ID变化 */
+watch(
+  () => [props.visible, props.memberId] as const,
+  async ([visible, memberId], [oldVisible]) => {
+    // 仅在弹窗打开时加载数据（避免关闭时的 memberId 变化触发加载）
+    if (visible && memberId && visible !== oldVisible) {
+      await loadCards()
+    }
   }
-})
-
-/** 监听会员ID变化 */
-watch(() => props.memberId, async (newVal) => {
-  if (newVal && props.visible) {
-    await loadCards()
-  }
-})
+)
 
 /**
  * 加载会员卡片列表
