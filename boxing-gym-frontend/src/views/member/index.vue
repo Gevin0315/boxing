@@ -49,6 +49,18 @@ const memberCardsMap = ref<Map<number, MemberCard[]>>(new Map())
 const cardsLoadingMap = ref<Map<number, boolean>>(new Map())
 const expandedRowKeys = ref<number[]>([])
 
+// 卡片列表弹窗
+const cardListDialogVisible = ref(false)
+const currentMemberId = ref<number | null>(null)
+const currentMemberName = ref('')
+const cardListLoading = ref(false)
+
+// 当前会员的卡片列表
+const currentMemberCards = computed(() => {
+  if (!currentMemberId.value) return []
+  return memberCardsMap.value.get(currentMemberId.value) || []
+})
+
 // 使用记录抽屉
 const drawerVisible = ref(false)
 const usageRecords = ref<CardUsageRecord[]>([])
