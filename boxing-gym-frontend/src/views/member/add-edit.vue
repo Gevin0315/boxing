@@ -101,7 +101,7 @@ const handleSubmit = async () => {
       ElMessage.success('新增成功')
     }
 
-    handleClose()
+    handleSubmitSuccess()
   } catch (error) {
     if (error !== false) {
       console.error('Failed to submit form:', error)
@@ -112,6 +112,10 @@ const handleSubmit = async () => {
 }
 
 const handleClose = () => {
+  emit('update:modelValue', false)
+}
+
+const handleSubmitSuccess = () => {
   emit('update:modelValue', false)
   emit('close')
 }

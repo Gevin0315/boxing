@@ -370,6 +370,16 @@ public class MemberCardServiceImpl extends ServiceImpl<MemberCardMapper, MemberC
     }
 
     @Override
+    public boolean hasActiveCard(Long memberId) {
+        LocalDate today = LocalDate.now();
+        LambdaQueryWrapper<MemberCard> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(MemberCard::getMemberId, memberId)
+                .eq(MemberCard::getStatus, CardStatusEnum.ACTIVE.getCode())
+                .ge(MemberCard::getExpireDate, today);
+        return count(wrapper) > 0;
+    }
+
+    @Override
     @Transactional(rollbackFor = Exception.class)
     public PaymentResultVO confirmPayment(ConfirmPaymentDTO dto) {
         FinanceOrder order = financeOrderMapper.selectById(dto.getOrderId());

@@ -18,6 +18,7 @@ export interface Member {
   remark?: string
   createTime?: string
   updateTime?: string
+  hasActiveCard?: boolean
 }
 
 /** 会员查询参数 */

@@ -4,9 +4,11 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.boxinggym.common.Result;
 import com.boxinggym.dto.BatchDeleteDTO;
+import com.boxinggym.dto.MemberVO;
 import com.boxinggym.entity.FinanceOrder;
 import com.boxinggym.entity.Member;
 import com.boxinggym.service.FinanceOrderService;
+import com.boxinggym.service.MemberCardService;
 import com.boxinggym.service.MemberService;
 import com.boxinggym.utils.SecurityUtil;
 import io.swagger.v3.oas.annotations.Operation;
@@ -20,6 +22,8 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 会员 Controller
@@ -32,6 +36,7 @@ import java.time.format.DateTimeFormatter;
 public class MemberController {
 
     private final MemberService memberService;
+    private final MemberCardService memberCardService;
     private final FinanceOrderService financeOrderService;
 
     /**
@@ -39,13 +44,13 @@ public class MemberController {
      */
     @Operation(summary = "分页查询会员")
     @GetMapping("/page")
-    public Result<Page<Member>> page(
+    public Result<Page<MemberVO>> page(
             @RequestParam(defaultValue = "1") Integer current,
             @RequestParam(defaultValue = "10") Integer size,
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String phone,
             @RequestParam(required = false) Integer status) {
-        Page<Member> page = new Page<>(current, size);
+        Page<Member> memberPage = new Page<>(current, size);
         LambdaQueryWrapper<Member> wrapper = new LambdaQueryWrapper<>();
         if (name != null && !name.isEmpty()) {
             wrapper.like(Member::getName, name);
@@ -57,8 +62,40 @@ public class MemberController {
             wrapper.eq(Member::getStatus, status);
         }
         wrapper.orderByDesc(Member::getCreateTime);
-        memberService.page(page, wrapper);
-        return Result.success(page);
+        memberService.page(memberPage, wrapper);
+
+        // 转换为 MemberVO
+        List<MemberVO> voList = memberPage.getRecords().stream()
+                .map(this::convertToVO)
+                .collect(Collectors.toList());
+
+        Page<MemberVO> resultPage = new Page<>(current, size);
+        resultPage.setRecords(voList);
+        resultPage.setTotal(memberPage.getTotal());
+
+        return Result.success(resultPage);
+    }
+
+    /**
+     * 转换为 MemberVO
+     */
+    private MemberVO convertToVO(Member member) {
+        MemberVO vo = new MemberVO();
+        vo.setId(member.getId());
+        vo.setName(member.getName());
+        vo.setPhone(member.getPhone());
+        vo.setGender(member.getGender());
+        vo.setGenderDesc(member.getGender() == 1 ? "男" : "女");
+        vo.setBalance(member.getBalance());
+        vo.setRemainingCourseCount(member.getRemainingCourseCount());
+        vo.setCardExpireDate(member.getCardExpireDate());
+        vo.setAvatarUrl(member.getAvatarUrl());
+        vo.setStatus(member.getStatus());
+        vo.setStatusDesc(member.getStatus() == 1 ? "正常" : "禁用");
+        vo.setCreateTime(member.getCreateTime());
+        // 检查是否有有效卡
+        vo.setHasActiveCard(memberCardService.hasActiveCard(member.getId()));
+        return vo;
     }
 
     /**

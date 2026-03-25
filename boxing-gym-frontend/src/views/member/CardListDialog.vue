@@ -252,7 +252,7 @@ async function handleViewRecords(card: MemberCard) {
   <el-dialog
     :model-value="visible"
     :title="`${memberName} 的会员卡`"
-    :width="DIALOG_WIDTH.LARGE"
+    width="1000px"
     @update:model-value="handleClose"
   >
     <!-- Toolbar -->

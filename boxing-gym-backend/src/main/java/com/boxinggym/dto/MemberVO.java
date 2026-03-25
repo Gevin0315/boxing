@@ -55,6 +55,9 @@ public class MemberVO {
     @Schema(description = "状态描述")
     private String statusDesc;
 
+    @Schema(description = "是否有有效卡")
+    private Boolean hasActiveCard;
+
     @Schema(description = "创建时间")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createTime;

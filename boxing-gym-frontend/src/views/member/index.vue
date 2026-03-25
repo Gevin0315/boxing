@@ -468,7 +468,10 @@ const formatDate = (date: string | undefined) => {
           <el-button type="success" link :icon="Coin" @click="handleRecharge(row)">充值</el-button>
           <el-button type="primary" link :icon="ShoppingCart" @click="handlePurchaseCard(row)">购卡</el-button>
           <el-button type="warning" link :icon="Wallet" @click="handleDeduct(row)">扣费</el-button>
-          <el-button type="danger" link :icon="Delete" @click="handleDelete(row)">删除</el-button>
+          <el-tooltip v-if="row.hasActiveCard" content="该会员有有效卡，不可删除" placement="top">
+            <el-button type="danger" link :icon="Delete" @click="handleDelete(row)">删除</el-button>
+          </el-tooltip>
+          <el-button v-else type="danger" link :icon="Delete" @click="handleDelete(row)">删除</el-button>
         </template>
       </el-table-column>
     </el-table>

@@ -135,4 +135,12 @@ public interface MemberCardService {
      * @return 是否可用
      */
     boolean validateCardForCheckin(Long memberCardId, Long memberId, boolean isPrivateClass);
+
+    /**
+     * 检查会员是否有有效卡
+     *
+     * @param memberId 会员ID
+     * @return 是否有有效卡
+     */
+    boolean hasActiveCard(Long memberId);
 }
