@@ -313,8 +313,8 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 **Files:**
 - Modify: `boxing-gym-frontend/src/views/member/index.vue:49-50` (refs)
 - Modify: `boxing-gym-frontend/src/views/member/index.vue:250-257` (method)
-- Modify: `boxing-gym-frontend/src/views/member/index.vue:260-270` (loadMemberCards)
-- Modify: `boxing-gym-frontend/src/views/member/index.vue:640-660` (styles)
+- Modify: `boxing-gym-frontend/src/views/member/index.vue:259-271` (loadMemberCards)
+- Modify: `boxing-gym-frontend/src/views/member/index.vue:641-660` (styles)
 
 - [ ] **Step 1: Remove unused refs**
 
@@ -340,7 +340,7 @@ const handleExpandChange = async (row: Member, expandedRows: Member[]) => {
 
 - [ ] **Step 3: Simplify `loadMemberCards` method**
 
-Update `loadMemberCards` to not use `cardsLoadingMap` (around lines 260-270):
+Update `loadMemberCards` to not use `cardsLoadingMap` (lines 259-271):
 
 ```typescript
 /** 加载会员卡片 */
@@ -357,7 +357,7 @@ const loadMemberCards = async (memberId: number) => {
 
 - [ ] **Step 4: Remove unused styles**
 
-Remove these CSS classes that are no longer needed (around lines 640-660):
+Remove these CSS classes that are no longer needed (lines 641-660):
 ```css
 .expand-content {
   padding: 12px 20px;
@@ -381,7 +381,7 @@ Remove these CSS classes that are no longer needed (around lines 640-660):
 }
 ```
 
-Keep `.no-cards` and `.no-records` styles.
+Keep `.no-cards` (lines 662-667) and `.no-records` (lines 669-674) styles.
 
 - [ ] **Step 5: Verify build and test**
 
