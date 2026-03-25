@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Search, Refresh, Edit, Delete, Coin, Wallet, CreditCard, View } from '@element-plus/icons-vue'
+import { Plus, Search, Refresh, Edit, Delete, Coin, Wallet, CreditCard, View, ShoppingCart } from '@element-plus/icons-vue'
 import { listMember, delMember, updateMemberStatus, memberRecharge, memberDeduct } from '@/api/member'
-import { getMemberCards, activateCard, voidCard, getCardUsageRecords } from '@/api/memberCard'
+import { getMemberCards, activateCard, voidCard, getCardUsageRecords, purchaseCard } from '@/api/memberCard'
+import { getAvailableCards } from '@/api/membershipCard'
 import { MEMBER_STATUS, GENDER } from '@/constants/dict'
 import {
   MemberCardStatus,
@@ -19,6 +20,7 @@ import { getDictLabel, formatCurrency } from '@/utils/format'
 import Pagination from '@/components/common/Pagination.vue'
 import AddEdit from './add-edit.vue'
 import type { Member, MemberQuery } from '@/types/member'
+import type { MembershipCard } from '@/types/membershipCard'
 
 const loading = ref(false)
 const memberList = ref<Member[]>([])
@@ -36,7 +38,7 @@ const dialogVisible = ref(false)
 const dialogTitle = ref('')
 const memberId = ref<number>()
 const rechargeVisible = ref(false)
-const rechargeMode = ref<'recharge' | 'deduct'>('recharge') // 充值或扣费模式
+const rechargeMode = ref<'recharge' | 'deduct'>('recharge')
 const rechargeForm = reactive({
   memberId: undefined as number | undefined,
   amount: 0
@@ -52,6 +54,19 @@ const drawerVisible = ref(false)
 const usageRecords = ref<CardUsageRecord[]>([])
 const usageLoading = ref(false)
 const selectedCard = ref<MemberCard | null>(null)
+
+// 购卡弹窗
+const purchaseCardVisible = ref(false)
+const purchaseCardForm = reactive({
+  memberId: undefined as number | undefined,
+  cardId: undefined as number | undefined,
+  payMethod: 3,
+  paidAmount: 0,
+  remark: ''
+})
+const availableCards = ref<MembershipCard[]>([])
+const cardsLoading = ref(false)
+const purchaseCardSubmitting = ref(false)
 
 onMounted(() => {
   getList()
@@ -157,10 +172,71 @@ const handleDeduct = (row: Member) => {
   rechargeVisible.value = true
 }
 
+/** 打开购卡弹窗 */
+const handlePurchaseCard = async (row: Member) => {
+  purchaseCardForm.memberId = row.id
+  purchaseCardForm.cardId = undefined
+  purchaseCardForm.payMethod = 3
+  purchaseCardForm.paidAmount = 0
+  purchaseCardForm.remark = ''
+  cardsLoading.value = true
+  purchaseCardVisible.value = true
+  try {
+    availableCards.value = await getAvailableCards()
+  } catch (error) {
+    console.error('Failed to load available cards:', error)
+    availableCards.value = []
+  } finally {
+    cardsLoading.value = false
+  }
+}
+
+/** 选择卡片时更新金额 */
+const handleCardChange = (cardId: number) => {
+  const card = availableCards.value.find(c => c.id === cardId)
+  if (card) {
+    purchaseCardForm.paidAmount = card.price || 0
+  }
+}
+
+/** 提交购卡 */
+const handlePurchaseCardSubmit = async () => {
+  if (!purchaseCardForm.cardId) {
+    ElMessage.warning('请选择要购买的卡片')
+    return
+  }
+  if (!purchaseCardForm.paidAmount || purchaseCardForm.paidAmount <= 0) {
+    ElMessage.warning('请输入有效的支付金额')
+    return
+  }
+  purchaseCardSubmitting.value = true
+  try {
+    const result = await purchaseCard({
+      memberId: purchaseCardForm.memberId!,
+      cardId: purchaseCardForm.cardId,
+      payMethod: purchaseCardForm.payMethod,
+      paidAmount: purchaseCardForm.paidAmount,
+      remark: purchaseCardForm.remark || undefined
+    })
+    purchaseCardVisible.value = false
+    if (result.status === 'completed') {
+      ElMessage.success('购卡成功')
+      memberCardsMap.value.delete(purchaseCardForm.memberId!)
+      await loadMemberCards(purchaseCardForm.memberId!)
+    } else if (result.status === 'pending') {
+      ElMessage.info('订单已创建，等待支付')
+    }
+    getList()
+  } catch (error) {
+    console.error('Failed to purchase card:', error)
+    ElMessage.error('购卡失败')
+  } finally {
+    purchaseCardSubmitting.value = false
+  }
+}
 
 const handleDialogClose = async () => {
   dialogVisible.value = false
-  // 延迟刷新列表，确保待处理的请求完成
   await new Promise(resolve => setTimeout(resolve, 100))
   getList()
 }
@@ -203,7 +279,7 @@ const formatDate = (date: string | undefined) => {
 /** 激活卡片 */
 const handleActivateCard = async (card: MemberCard, memberId: number) => {
   try {
-    await ElMessageBox.confirm(`确定要激活卡片 "${card.cardNo}" 吗？`, '激活确认', {
+    await ElMessageBox.confirm(`确定要激活卡片 "${card.cardName}" 吗？`, '激活确认', {
       confirmButtonText: '确定激活',
       cancelButtonText: '取消',
       type: 'info',
@@ -310,7 +386,6 @@ const handleViewRecords = async (card: MemberCard) => {
                 <span>持卡信息 ({{ memberCardsMap.get(row.id!)?.length || 0 }}张)</span>
               </div>
               <el-table :data="memberCardsMap.get(row.id!)" size="small" border>
-                <el-table-column prop="cardNo" label="卡号" width="150" />
                 <el-table-column prop="cardName" label="卡名称" min-width="120" />
                 <el-table-column prop="cardCategory" label="卡分类" width="100">
                   <template #default="{ row: card }">
@@ -408,6 +483,7 @@ const handleViewRecords = async (card: MemberCard) => {
         <template #default="{ row }">
           <el-button type="primary" link :icon="Edit" @click="handleEdit(row)">编辑</el-button>
           <el-button type="success" link :icon="Coin" @click="handleRecharge(row)">充值</el-button>
+          <el-button type="primary" link :icon="ShoppingCart" @click="handlePurchaseCard(row)">购卡</el-button>
           <el-button type="warning" link :icon="Wallet" @click="handleDeduct(row)">扣费</el-button>
           <el-button type="danger" link :icon="Delete" @click="handleDelete(row)">删除</el-button>
         </template>
@@ -444,6 +520,56 @@ const handleViewRecords = async (card: MemberCard) => {
       <template #footer>
         <el-button @click="rechargeVisible = false">取消</el-button>
         <el-button :type="rechargeMode === 'recharge' ? 'primary' : 'warning'" @click="handleRechargeSubmit">确定</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 购卡弹窗 -->
+    <el-dialog
+      v-model="purchaseCardVisible"
+      title="购买会员卡"
+      width="500px"
+    >
+      <el-form label-width="80px">
+        <el-form-item label="选择卡片">
+          <el-select
+            v-model="purchaseCardForm.cardId"
+            placeholder="请选择卡片"
+            style="width: 100%"
+            :loading="cardsLoading"
+            @change="handleCardChange"
+          >
+            <el-option
+              v-for="card in availableCards"
+              :key="card.id"
+              :label="`${card.cardName} - ${formatCurrency(card.price)}`"
+              :value="card.id"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="支付方式">
+          <el-select v-model="purchaseCardForm.payMethod" placeholder="请选择支付方式" style="width: 100%">
+            <el-option label="现金" :value="3" />
+            <el-option label="刷卡" :value="4" />
+            <el-option label="微信" :value="1" />
+            <el-option label="支付宝" :value="2" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="实付金额">
+          <el-input-number
+            v-model="purchaseCardForm.paidAmount"
+            :min="0"
+            :precision="2"
+            :step="10"
+            style="width: 100%"
+          />
+        </el-form-item>
+        <el-form-item label="备注">
+          <el-input v-model="purchaseCardForm.remark" placeholder="请输入备注（可选）" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="purchaseCardVisible = false">取消</el-button>
+        <el-button type="primary" :loading="purchaseCardSubmitting" @click="handlePurchaseCardSubmit">确定</el-button>
       </template>
     </el-dialog>
 
