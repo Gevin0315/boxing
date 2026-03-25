@@ -30,12 +30,15 @@ Convert the member card list from a nested expandable table to a dialog-based di
 │  ─────────────────────────────────────────────────────  │
 │  年卡     │ 团课 │ 正常 │ 30天 │ 2024-01-01│ 激活/作废/记录│
 │  ...                                                     │
-├─────────────────────────────────────────────────────────┤
-│                                    [< 1 2 3 >]          │
+│                                                          │
+│  (暂无持卡信息 - shown when no cards)                   │
+├─────────────────────────────────────────────────────────┘
 └─────────────────────────────────────────────────────────┘
 ```
 
 ### Columns
+
+Keep all existing columns for feature parity:
 
 | Column | Content | Width |
 |--------|---------|-------|
@@ -44,15 +47,25 @@ Convert the member card list from a nested expandable table to a dialog-based di
 | 状态 | Status tag (未激活/正常/已过期/已作废) | 80px |
 | 剩余 | Remaining sessions or days | 80px |
 | 购买日期 | Purchase date | 110px |
+| 激活日期 | Activation date | 110px |
+| 到期日期 | Expiry date | 110px |
 | 操作 | Action buttons | 150px |
 
 ### Quick Actions
 
 1. **Purchase Card button** - Top of dialog, opens existing purchase dialog
+
 2. **Card row actions** (existing):
-   - 激活 (Activate) - for inactive cards
-   - 作废 (Void) - for active cards
-   - 记录 (Records) - opens usage records drawer
+   - 激活 (Activate) - shown when `card.canBeActivated` is true
+   - 作废 (Void) - shown when `card.status === MemberCardStatus.ACTIVE`
+   - 记录 (Records) - always visible
+
+### Empty State
+
+When member has no cards, display:
+```
+暂无持卡信息
+```
 
 ## Implementation Details
 
@@ -68,7 +81,32 @@ Add new reactive refs:
 const cardListDialogVisible = ref(false)
 const currentMemberId = ref<number | null>(null)
 const currentMemberName = ref('')
+const cardListLoading = ref(false)
+
+// Computed for current member's cards
+const currentMemberCards = computed(() => {
+  if (!currentMemberId.value) return []
+  return memberCardsMap.value.get(currentMemberId.value) || []
+})
 ```
+
+### Code to Remove (Cleanup)
+
+Remove the expand-related code:
+
+```typescript
+// Remove these refs:
+const cardsLoadingMap = ref<Map<number, boolean>>(new Map())
+const expandedRowKeys = ref<number[]>([])
+
+// Remove this method:
+const handleExpandChange = async (row: Member, expandedRows: Member[]) => { ... }
+```
+
+Remove from el-table:
+- `:expand-row-keys="expandedRowKeys"`
+- `@expand-change="handleExpandChange"`
+- `<el-table-column type="expand">...</el-table-column>`
 
 ### Template Changes
 
@@ -97,7 +135,7 @@ const currentMemberName = ref('')
   width="600px"
 >
   <!-- Toolbar -->
-  <div class="dialog-toolbar">
+  <div class="dialog-toolbar" style="margin-bottom: 16px;">
     <el-button type="primary" @click="openPurchaseCard">
       <el-icon><Plus /></el-icon>
       购买会员卡
@@ -105,8 +143,51 @@ const currentMemberName = ref('')
   </div>
 
   <!-- Card Table -->
-  <el-table :data="currentMemberCards" v-loading="cardListLoading">
-    <!-- Card columns (reuse existing) -->
+  <el-table
+    :data="currentMemberCards"
+    v-loading="cardListLoading"
+    :header-cell-style="{ background: '#f5f7fa' }"
+  >
+    <!-- Reuse existing column definitions -->
+    <el-table-column prop="cardName" label="卡片名称" />
+    <el-table-column prop="cardCategory" label="类别" width="100">
+      <template #default="{ row }">
+        {{ CARD_CATEGORY_MAP[row.cardCategory] }}
+      </template>
+    </el-table-column>
+    <el-table-column prop="status" label="状态" width="80">
+      <template #default="{ row }">
+        <el-tag :type="MEMBER_CARD_STATUS_TAG_TYPE[row.status]">
+          {{ MEMBER_CARD_STATUS_MAP[row.status] }}
+        </el-tag>
+      </template>
+    </el-table-column>
+    <el-table-column label="剩余" width="80">
+      <template #default="{ row }">
+        {{ formatRemaining(row) }}
+      </template>
+    </el-table-column>
+    <el-table-column prop="purchaseTime" label="购买日期" width="110" />
+    <el-table-column prop="activationTime" label="激活日期" width="110" />
+    <el-table-column prop="expireDate" label="到期日期" width="110" />
+    <el-table-column label="操作" width="150" fixed="right">
+      <template #default="{ row }">
+        <el-button v-if="row.canBeActivated" link type="primary" @click="handleActivateCard(row)">
+          激活
+        </el-button>
+        <el-button v-if="row.status === MemberCardStatus.ACTIVE" link type="danger" @click="handleVoidCard(row)">
+          作废
+        </el-button>
+        <el-button link type="primary" @click="viewUsageRecords(row)">
+          记录
+        </el-button>
+      </template>
+    </el-table-column>
+
+    <!-- Empty state -->
+    <template #empty>
+      <div class="no-cards">暂无持卡信息</div>
+    </template>
   </el-table>
 </el-dialog>
 ```
@@ -114,14 +195,23 @@ const currentMemberName = ref('')
 ### Methods
 
 ```typescript
-const openCardListDialog = (member: Member) => {
+const openCardListDialog = async (member: Member) => {
   currentMemberId.value = member.id
   currentMemberName.value = member.name
   cardListDialogVisible.value = true
-  loadMemberCards(member.id)
+  cardListLoading.value = true
+  await loadMemberCards(member.id)
+  cardListLoading.value = false
 }
 
 const openPurchaseCard = () => {
+  // Set member context for purchase
+  purchaseCardForm.memberId = currentMemberId.value
+  purchaseCardForm.cardId = undefined
+  purchaseCardForm.payMethod = 3
+  purchaseCardForm.paidAmount = 0
+  purchaseCardForm.remark = ''
+  loadAvailableCards()
   purchaseCardVisible.value = true
 }
 ```
@@ -131,13 +221,19 @@ const openPurchaseCard = () => {
 - `memberCardsMap` - Map storing cards per member
 - `loadMemberCards(memberId)` - Load cards for a member
 - `handleActivateCard()`, `handleVoidCard()`, `viewUsageRecords()` - Existing action handlers
-- `purchaseCardVisible` - Existing purchase dialog visibility
+- `handlePurchaseCardSubmit()` - Existing purchase submit (already refreshes card list)
+- `purchaseCardVisible`, `purchaseCardForm` - Existing purchase dialog state
 - Usage records drawer - No changes
+- `formatRemaining()` - Existing helper for remaining sessions/days
+- `MEMBER_CARD_STATUS_MAP`, `MEMBER_CARD_STATUS_TAG_TYPE`, `CARD_CATEGORY_MAP` - Existing constants
+- `MemberCardStatus` - Existing enum
 
 ## Success Criteria
 
 1. Click expand icon opens dialog (not inline expansion)
 2. Dialog displays member's cards with all existing columns
-3. Purchase Card button opens existing purchase dialog
+3. Purchase Card button opens existing purchase dialog with correct member context
 4. All existing card actions work within dialog
 5. Usage records drawer still functions correctly
+6. After purchasing a card from within the dialog, the card list refreshes automatically
+7. Empty state displays "暂无持卡信息" when member has no cards
