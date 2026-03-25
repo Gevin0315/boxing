@@ -288,8 +288,13 @@ const openCardListDialog = async (member: Member) => {
   currentMemberName.value = member.name
   cardListDialogVisible.value = true
   cardListLoading.value = true
-  await loadMemberCards(member.id!)
-  cardListLoading.value = false
+  try {
+    await loadMemberCards(member.id!)
+  } catch (error) {
+    console.error('Failed to load member cards:', error)
+  } finally {
+    cardListLoading.value = false
+  }
 }
 
 /** 卡片列表弹窗关闭处理 */
@@ -307,13 +312,13 @@ const openPurchaseCardFromDialog = async () => {
   cardsLoading.value = true
   try {
     availableCards.value = await getAvailableCards()
+    purchaseCardVisible.value = true
   } catch (error) {
     console.error('Failed to load available cards:', error)
     availableCards.value = []
   } finally {
     cardsLoading.value = false
   }
-  purchaseCardVisible.value = true
 }
 
 /** 格式化日期 */
