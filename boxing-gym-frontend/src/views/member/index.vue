@@ -1,26 +1,15 @@
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Search, Refresh, Edit, Delete, Coin, Wallet, CreditCard, View, ShoppingCart } from '@element-plus/icons-vue'
+import { Plus, Search, Refresh, Edit, Delete, Coin, Wallet, CreditCard, ShoppingCart } from '@element-plus/icons-vue'
 import { listMember, delMember, updateMemberStatus, memberRecharge, memberDeduct } from '@/api/member'
-import { getMemberCards, activateCard, voidCard, getCardUsageRecords, purchaseCard } from '@/api/memberCard'
-import { getAvailableCards } from '@/api/membershipCard'
 import { MEMBER_STATUS, GENDER } from '@/constants/dict'
-import {
-  MemberCardStatus,
-  MEMBER_CARD_STATUS_MAP,
-  MEMBER_CARD_STATUS_TAG_TYPE,
-  CardCategory,
-  CARD_CATEGORY_MAP,
-  CARD_USAGE_TYPE_MAP,
-  type MemberCard,
-  type CardUsageRecord,
-} from '@/types/memberCard'
-import { getDictLabel, formatCurrency } from '@/utils/format'
+import { DIALOG_WIDTH, DELAY, PAYMENT_METHOD } from '@/constants/ui'
+import { getDictLabel, formatCurrency, debounce } from '@/utils/format'
 import Pagination from '@/components/common/Pagination.vue'
 import AddEdit from './add-edit.vue'
+import CardListDialog from './CardListDialog.vue'
 import type { Member, MemberQuery } from '@/types/member'
-import type { MembershipCard } from '@/types/membershipCard'
 
 const loading = ref(false)
 const memberList = ref<Member[]>([])
@@ -45,7 +34,7 @@ const rechargeForm = reactive({
 })
 
 // 展开行相关
-const memberCardsMap = ref<Map<number, MemberCard[]>>(new Map())
+const memberCardsMap = ref<Map<number, any[]>>(new Map())
 const cardsLoadingMap = ref<Map<number, boolean>>(new Map())
 const expandedRowKeys = ref<number[]>([])
 
@@ -53,37 +42,30 @@ const expandedRowKeys = ref<number[]>([])
 const cardListDialogVisible = ref(false)
 const currentMemberId = ref<number | null>(null)
 const currentMemberName = ref('')
-const cardListLoading = ref(false)
-
-// 当前会员的卡片列表
-const currentMemberCards = computed(() => {
-  if (!currentMemberId.value) return []
-  return memberCardsMap.value.get(currentMemberId.value) || []
-})
-
-// 使用记录抽屉
-const drawerVisible = ref(false)
-const usageRecords = ref<CardUsageRecord[]>([])
-const usageLoading = ref(false)
-const selectedCard = ref<MemberCard | null>(null)
 
 // 购卡弹窗
 const purchaseCardVisible = ref(false)
 const purchaseCardForm = reactive({
   memberId: undefined as number | undefined,
   cardId: undefined as number | undefined,
-  payMethod: 3,
+  payMethod: PAYMENT_METHOD.CASH,
   paidAmount: 0,
   remark: ''
 })
-const availableCards = ref<MembershipCard[]>([])
+const availableCards = ref<any[]>([])
 const cardsLoading = ref(false)
 const purchaseCardSubmitting = ref(false)
 
+/**
+ * 组件挂载时初始化数据
+ */
 onMounted(() => {
   getList()
 })
 
+/**
+ * 获取会员列表
+ */
 const getList = async () => {
   loading.value = true
   try {
@@ -92,16 +74,23 @@ const getList = async () => {
     total.value = res.total || 0
   } catch (error) {
     console.error('Failed to get member list:', error)
+    ElMessage.error('获取会员列表失败')
   } finally {
     loading.value = false
   }
 }
 
+/**
+ * 处理搜索
+ */
 const handleSearch = () => {
   queryParams.pageNum = 1
   getList()
 }
 
+/**
+ * 处理重置
+ */
 const handleReset = () => {
   Object.assign(queryParams, {
     pageNum: 1,
@@ -113,43 +102,70 @@ const handleReset = () => {
   getList()
 }
 
+/**
+ * 处理新增会员
+ */
 const handleAdd = () => {
   dialogTitle.value = '新增会员'
   memberId.value = undefined
   dialogVisible.value = true
 }
 
+/**
+ * 处理编辑会员
+ */
 const handleEdit = (row: Member) => {
   dialogTitle.value = '编辑会员'
   memberId.value = row.id
   dialogVisible.value = true
 }
 
+/**
+ * 处理删除会员
+ */
 const handleDelete = async (row: Member) => {
+  if (!row.id) {
+    ElMessage.error('会员ID不存在')
+    return
+  }
+
   try {
     await ElMessageBox.confirm(`确定要删除会员"${row.name}"吗？`, '提示', {
       type: 'warning'
     })
-    await delMember([row.id!])
+    await delMember([row.id])
     ElMessage.success('删除成功')
     getList()
   } catch (error) {
     if (error !== 'cancel') {
       console.error('Failed to delete member:', error)
+      ElMessage.error('删除失败')
     }
   }
 }
 
+/**
+ * 处理会员状态变更
+ */
 const handleStatusChange = async (row: Member) => {
+  if (!row.id) {
+    ElMessage.error('会员ID不存在')
+    return
+  }
+
   try {
-    await updateMemberStatus(row.id!, row.status)
+    await updateMemberStatus(row.id, row.status)
     ElMessage.success('状态修改成功')
   } catch (error) {
     console.error('Failed to update member status:', error)
+    ElMessage.error('状态修改失败')
     getList()
   }
 }
 
+/**
+ * 处理会员充值
+ */
 const handleRecharge = (row: Member) => {
   rechargeMode.value = 'recharge'
   rechargeForm.memberId = row.id
@@ -157,26 +173,39 @@ const handleRecharge = (row: Member) => {
   rechargeVisible.value = true
 }
 
+/**
+ * 处理充值/扣费提交
+ */
 const handleRechargeSubmit = async () => {
+  if (!rechargeForm.memberId) {
+    ElMessage.error('会员ID不存在')
+    return
+  }
+
   if (!rechargeForm.amount || rechargeForm.amount <= 0) {
     ElMessage.warning(rechargeMode.value === 'recharge' ? '请输入有效的充值金额' : '请输入有效的扣费金额')
     return
   }
+
   try {
     if (rechargeMode.value === 'recharge') {
-      await memberRecharge(rechargeForm.memberId!, rechargeForm.amount)
+      await memberRecharge(rechargeForm.memberId, rechargeForm.amount)
       ElMessage.success('充值成功')
     } else {
-      await memberDeduct(rechargeForm.memberId!, rechargeForm.amount)
+      await memberDeduct(rechargeForm.memberId, rechargeForm.amount)
       ElMessage.success('扣费成功')
     }
     rechargeVisible.value = false
     getList()
   } catch (error) {
     console.error('Failed to submit:', error)
+    ElMessage.error(rechargeMode.value === 'recharge' ? '充值失败' : '扣费失败')
   }
 }
 
+/**
+ * 处理会员扣费
+ */
 const handleDeduct = (row: Member) => {
   rechargeMode.value = 'deduct'
   rechargeForm.memberId = row.id
@@ -184,26 +213,43 @@ const handleDeduct = (row: Member) => {
   rechargeVisible.value = true
 }
 
-/** 打开购卡弹窗 */
+/**
+ * 打开购卡弹窗
+ */
 const handlePurchaseCard = async (row: Member) => {
+  if (!row.id) {
+    ElMessage.error('会员ID不存在')
+    return
+  }
+
+  // 防止重复打开
+  if (purchaseCardVisible.value) {
+    return
+  }
+
   purchaseCardForm.memberId = row.id
   purchaseCardForm.cardId = undefined
-  purchaseCardForm.payMethod = 3
+  purchaseCardForm.payMethod = PAYMENT_METHOD.CASH
   purchaseCardForm.paidAmount = 0
   purchaseCardForm.remark = ''
   cardsLoading.value = true
   purchaseCardVisible.value = true
+
   try {
+    const { getAvailableCards } = await import('@/api/membershipCard')
     availableCards.value = await getAvailableCards()
   } catch (error) {
     console.error('Failed to load available cards:', error)
+    ElMessage.error('加载可用卡片失败')
     availableCards.value = []
   } finally {
     cardsLoading.value = false
   }
 }
 
-/** 选择卡片时更新金额 */
+/**
+ * 选择卡片时更新金额
+ */
 const handleCardChange = (cardId: number) => {
   const card = availableCards.value.find(c => c.id === cardId)
   if (card) {
@@ -211,30 +257,41 @@ const handleCardChange = (cardId: number) => {
   }
 }
 
-/** 提交购卡 */
+/**
+ * 提交购卡
+ */
 const handlePurchaseCardSubmit = async () => {
+  if (!purchaseCardForm.memberId) {
+    ElMessage.error('会员ID不存在')
+    return
+  }
+
   if (!purchaseCardForm.cardId) {
     ElMessage.warning('请选择要购买的卡片')
     return
   }
+
   if (!purchaseCardForm.paidAmount || purchaseCardForm.paidAmount <= 0) {
     ElMessage.warning('请输入有效的支付金额')
     return
   }
+
   purchaseCardSubmitting.value = true
   try {
+    const { purchaseCard } = await import('@/api/memberCard')
     const result = await purchaseCard({
-      memberId: purchaseCardForm.memberId!,
+      memberId: purchaseCardForm.memberId,
       cardId: purchaseCardForm.cardId,
       payMethod: purchaseCardForm.payMethod,
       paidAmount: purchaseCardForm.paidAmount,
       remark: purchaseCardForm.remark || undefined
     })
+
     purchaseCardVisible.value = false
     if (result.status === 'completed') {
       ElMessage.success('购卡成功')
-      memberCardsMap.value.delete(purchaseCardForm.memberId!)
-      await loadMemberCards(purchaseCardForm.memberId!)
+      memberCardsMap.value.delete(purchaseCardForm.memberId)
+      await loadMemberCards(purchaseCardForm.memberId)
     } else if (result.status === 'pending') {
       ElMessage.info('订单已创建，等待支付')
     }
@@ -247,142 +304,89 @@ const handlePurchaseCardSubmit = async () => {
   }
 }
 
+/**
+ * 处理弹窗关闭
+ */
 const handleDialogClose = async () => {
   dialogVisible.value = false
-  await new Promise(resolve => setTimeout(resolve, 100))
+  await new Promise(resolve => setTimeout(resolve, DELAY.DIALOG_CLOSE))
   getList()
 }
 
+/**
+ * 处理分页变化
+ */
 const handlePageChange = (page: number, pageSize: number) => {
   queryParams.pageNum = page
   queryParams.pageSize = pageSize
   getList()
 }
 
-/** 处理行展开 */
+/**
+ * 处理行展开
+ */
 const handleExpandChange = async (row: Member, expandedRows: Member[]) => {
-  expandedRowKeys.value = expandedRows.map(r => r.id!)
+  if (!row.id) return
 
-  if (expandedRows.some(r => r.id === row.id) && !memberCardsMap.value.has(row.id!)) {
-    await loadMemberCards(row.id!)
+  expandedRowKeys.value = expandedRows.map(r => r.id!).filter(Boolean)
+
+  if (expandedRows.some(r => r.id === row.id) && !memberCardsMap.value.has(row.id)) {
+    await loadMemberCards(row.id)
   }
 }
 
-/** 加载会员卡片 */
+/**
+ * 加载会员卡片
+ */
 const loadMemberCards = async (memberId: number) => {
   cardsLoadingMap.value.set(memberId, true)
   try {
+    const { getMemberCards } = await import('@/api/memberCard')
     const res = await getMemberCards(memberId)
     memberCardsMap.value.set(memberId, res || [])
   } catch (error) {
     console.error('Failed to load member cards:', error)
+    ElMessage.error('加载会员卡片失败')
     memberCardsMap.value.set(memberId, [])
   } finally {
     cardsLoadingMap.value.set(memberId, false)
   }
 }
 
-/** 打开卡片列表弹窗 */
-const openCardListDialog = async (member: Member) => {
-  currentMemberId.value = member.id!
+/**
+ * 打开卡片列表弹窗（带防抖）
+ */
+const debouncedOpenCardListDialog = debounce(async (member: Member) => {
+  if (!member.id) {
+    ElMessage.error('会员ID不存在')
+    return
+  }
+
+  currentMemberId.value = member.id
   currentMemberName.value = member.name
   cardListDialogVisible.value = true
-  cardListLoading.value = true
-  try {
-    await loadMemberCards(member.id!)
-  } catch (error) {
-    console.error('Failed to load member cards:', error)
-  } finally {
-    cardListLoading.value = false
-  }
+}, 300)
+
+/**
+ * 打开卡片列表弹窗
+ */
+const openCardListDialog = (member: Member) => {
+  debouncedOpenCardListDialog(member)
 }
 
-/** 卡片列表弹窗关闭处理 */
-const handleCardListDialogClose = () => {
-  cardListLoading.value = false
+/**
+ * 处理卡片列表弹窗刷新
+ */
+const handleCardListRefresh = () => {
+  getList()
 }
 
-/** 从弹窗内打开购卡 */
-const openPurchaseCardFromDialog = async () => {
-  purchaseCardForm.memberId = currentMemberId.value!
-  purchaseCardForm.cardId = undefined
-  purchaseCardForm.payMethod = 3
-  purchaseCardForm.paidAmount = 0
-  purchaseCardForm.remark = ''
-  cardsLoading.value = true
-  try {
-    availableCards.value = await getAvailableCards()
-    purchaseCardVisible.value = true
-  } catch (error) {
-    console.error('Failed to load available cards:', error)
-    availableCards.value = []
-  } finally {
-    cardsLoading.value = false
-  }
-}
-
-/** 格式化日期 */
-const formatDate = (date: string | undefined) => {
+/**
+ * 格式化日期
+ */
+export const formatDate = (date: string | undefined) => {
   if (!date) return '-'
   return date.split('T')[0] || date.split(' ')[0]
-}
-
-/** 激活卡片 */
-const handleActivateCard = async (card: MemberCard, memberId: number) => {
-  try {
-    await ElMessageBox.confirm(`确定要激活卡片 "${card.cardName}" 吗？`, '激活确认', {
-      confirmButtonText: '确定激活',
-      cancelButtonText: '取消',
-      type: 'info',
-    })
-    await activateCard({ memberCardId: card.id })
-    ElMessage.success('激活成功')
-    memberCardsMap.value.delete(memberId)
-    await loadMemberCards(memberId)
-  } catch (error: unknown) {
-    if (error !== 'cancel') {
-      console.error('Failed to activate card:', error)
-      ElMessage.error('激活失败')
-    }
-  }
-}
-
-/** 作废卡片 */
-const handleVoidCard = async (card: MemberCard, memberId: number) => {
-  try {
-    const { value } = await ElMessageBox.prompt('请输入作废原因', '作废确认', {
-      confirmButtonText: '确定作废',
-      cancelButtonText: '取消',
-      inputPattern: /\S+/,
-      inputErrorMessage: '请输入作废原因',
-      type: 'warning',
-    })
-    await voidCard({ memberCardId: card.id, reason: value })
-    ElMessage.success('作废成功')
-    memberCardsMap.value.delete(memberId)
-    await loadMemberCards(memberId)
-  } catch (error: unknown) {
-    if (error !== 'cancel') {
-      console.error('Failed to void card:', error)
-      ElMessage.error('作废失败')
-    }
-  }
-}
-
-/** 查看使用记录 */
-const handleViewRecords = async (card: MemberCard) => {
-  selectedCard.value = card
-  drawerVisible.value = true
-  usageLoading.value = true
-  try {
-    const res = await getCardUsageRecords(card.id)
-    usageRecords.value = res || []
-  } catch (error) {
-    console.error('Failed to load usage records:', error)
-    usageRecords.value = []
-  } finally {
-    usageLoading.value = false
-  }
 }
 </script>
 
@@ -489,7 +493,7 @@ const handleViewRecords = async (card: MemberCard) => {
     <el-dialog
       v-model="rechargeVisible"
       :title="rechargeMode === 'recharge' ? '会员充值' : '会员扣费'"
-      width="400px"
+      :width="DIALOG_WIDTH.SMALL"
     >
       <el-form label-width="80px">
         <el-form-item :label="rechargeMode === 'recharge' ? '充值金额' : '扣费金额'">
@@ -506,7 +510,7 @@ const handleViewRecords = async (card: MemberCard) => {
     <el-dialog
       v-model="purchaseCardVisible"
       title="购买会员卡"
-      width="500px"
+      :width="DIALOG_WIDTH.MEDIUM"
     >
       <el-form label-width="80px">
         <el-form-item label="选择卡片">
@@ -527,10 +531,10 @@ const handleViewRecords = async (card: MemberCard) => {
         </el-form-item>
         <el-form-item label="支付方式">
           <el-select v-model="purchaseCardForm.payMethod" placeholder="请选择支付方式" style="width: 100%">
-            <el-option label="现金" :value="3" />
-            <el-option label="刷卡" :value="4" />
-            <el-option label="微信" :value="1" />
-            <el-option label="支付宝" :value="2" />
+            <el-option label="微信" :value="PAYMENT_METHOD.WECHAT" />
+            <el-option label="支付宝" :value="PAYMENT_METHOD.ALIPAY" />
+            <el-option label="现金" :value="PAYMENT_METHOD.CASH" />
+            <el-option label="刷卡" :value="PAYMENT_METHOD.BANK_CARD" />
           </el-select>
         </el-form-item>
         <el-form-item label="实付金额">
@@ -553,144 +557,12 @@ const handleViewRecords = async (card: MemberCard) => {
     </el-dialog>
 
     <!-- 卡片列表弹窗 -->
-    <el-dialog
-      v-model="cardListDialogVisible"
-      :title="`${currentMemberName} 的会员卡`"
-      width="600px"
-      @closed="handleCardListDialogClose"
-    >
-      <!-- Toolbar -->
-      <div style="margin-bottom: 16px;">
-        <el-button type="primary" @click="openPurchaseCardFromDialog">
-          <el-icon><Plus /></el-icon>
-          购买会员卡
-        </el-button>
-      </div>
-
-      <!-- Card Table -->
-      <el-table
-        :data="currentMemberCards"
-        v-loading="cardListLoading"
-        size="small"
-        border
-        :header-cell-style="{ background: '#f5f7fa' }"
-      >
-        <el-table-column prop="cardName" label="卡片名称" min-width="120" />
-        <el-table-column prop="cardCategory" label="类别" width="100">
-          <template #default="{ row }">
-            {{ CARD_CATEGORY_MAP[row.cardCategory] || row.cardCategoryDesc }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="status" label="状态" width="90">
-          <template #default="{ row }">
-            <el-tag :type="MEMBER_CARD_STATUS_TAG_TYPE[row.status]" size="small">
-              {{ MEMBER_CARD_STATUS_MAP[row.status] || row.statusDesc }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="剩余次数/有效期" width="140">
-          <template #default="{ row }">
-            <template v-if="row.cardCategory === CardCategory.GROUP_TIME">
-              {{ row.remainingDays ?? '-' }}天
-            </template>
-            <template v-else>
-              {{ row.remainingSessions ?? 0 }}次
-            </template>
-          </template>
-        </el-table-column>
-        <el-table-column prop="purchaseTime" label="购卡日期" width="110">
-          <template #default="{ row }">
-            {{ formatDate(row.purchaseTime) }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="activationTime" label="激活日期" width="110">
-          <template #default="{ row }">
-            {{ formatDate(row.activationTime) }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="expireDate" label="到期日期" width="110">
-          <template #default="{ row }">
-            {{ formatDate(row.expireDate) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="180" fixed="right">
-          <template #default="{ row }">
-            <el-button
-              v-if="row.canBeActivated"
-              type="success"
-              link
-              size="small"
-              @click="handleActivateCard(row, currentMemberId!)"
-            >
-              激活
-            </el-button>
-            <el-button
-              v-if="row.status === MemberCardStatus.ACTIVE"
-              type="danger"
-              link
-              size="small"
-              @click="handleVoidCard(row, currentMemberId!)"
-            >
-              作废
-            </el-button>
-            <el-button type="primary" link size="small" @click="handleViewRecords(row)">
-              <el-icon><View /></el-icon>
-              记录
-            </el-button>
-          </template>
-        </el-table-column>
-
-        <!-- Empty state -->
-        <template #empty>
-          <div class="no-cards">暂无持卡信息</div>
-        </template>
-      </el-table>
-    </el-dialog>
-
-    <!-- 使用记录抽屉 -->
-    <el-drawer
-      v-model="drawerVisible"
-      :title="`卡片使用记录 - ${selectedCard?.cardNo || ''}`"
-      size="600px"
-    >
-      <el-table v-loading="usageLoading" :data="usageRecords" stripe border size="small">
-        <el-table-column type="index" label="序号" width="60" align="center" />
-        <el-table-column prop="usageType" label="类型" width="80">
-          <template #default="{ row }">
-            <el-tag :type="row.usageType === 1 ? 'success' : row.usageType === 2 ? 'primary' : row.usageType === 3 ? 'info' : 'danger'" size="small">
-              {{ CARD_USAGE_TYPE_MAP[row.usageType] || row.usageTypeDesc }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="courseName" label="课程" min-width="120">
-          <template #default="{ row }">
-            {{ row.courseName || '-' }}
-          </template>
-        </el-table-column>
-        <el-table-column label="次数变化" width="100">
-          <template #default="{ row }">
-            <template v-if="row.sessionsBefore !== undefined && row.sessionsAfter !== undefined">
-              {{ row.sessionsBefore }} -> {{ row.sessionsAfter }}
-            </template>
-            <template v-else>-</template>
-          </template>
-        </el-table-column>
-        <el-table-column prop="operatorName" label="操作人" width="100">
-          <template #default="{ row }">
-            {{ row.operatorName || '-' }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="createTime" label="操作时间" width="160" />
-        <el-table-column prop="remark" label="备注" min-width="120">
-          <template #default="{ row }">
-            {{ row.remark || '-' }}
-          </template>
-        </el-table-column>
-      </el-table>
-      <div v-if="!usageLoading && !usageRecords.length" class="no-records">
-        暂无使用记录
-      </div>
-    </el-drawer>
+    <CardListDialog
+      v-model:visible="cardListDialogVisible"
+      :member-id="currentMemberId"
+      :member-name="currentMemberName"
+      @refresh="handleCardListRefresh"
+    />
   </div>
 </template>
 
@@ -710,40 +582,5 @@ const handleViewRecords = async (card: MemberCard) => {
 
 .toolbar {
   margin-bottom: 20px;
-}
-
-.expand-content {
-  padding: 12px 20px;
-  background: #fafafa;
-}
-
-.cards-table-wrapper {
-  background: #fff;
-  border-radius: 4px;
-  padding: 12px;
-}
-
-.cards-header {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 12px;
-  font-size: 14px;
-  font-weight: 500;
-  color: #303133;
-}
-
-.no-cards {
-  text-align: center;
-  color: #909399;
-  padding: 20px;
-  font-size: 14px;
-}
-
-.no-records {
-  text-align: center;
-  color: #909399;
-  padding: 40px;
-  font-size: 14px;
 }
 </style>
