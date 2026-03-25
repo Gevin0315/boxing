@@ -18,25 +18,51 @@
 
 ---
 
-## Task 1: Add New State Variables and Computed
+## Task 1: Add `computed` to Imports
 
 **Files:**
-- Modify: `boxing-gym-frontend/src/views/member/index.vue:2` (imports)
-- Modify: `boxing-gym-frontend/src/views/member/index.vue:47-50` (state section)
+- Modify: `boxing-gym-frontend/src/views/member/index.vue` (line 2, imports)
 
-- [ ] **Step 1: Add `computed` to imports**
+- [ ] **Step 1: Add `computed` to Vue imports**
 
-Add `computed` to the Vue imports (line 2):
+Find the import statement on line 2:
+```typescript
+import { ref, reactive, onMounted } from 'vue'
+```
 
+Change it to:
 ```typescript
 import { ref, reactive, onMounted, computed } from 'vue'
 ```
 
-- [ ] **Step 2: Add new state variables after line 50**
+- [ ] **Step 2: Verify no TypeScript errors**
 
-Add after `const expandedRowKeys = ref<number[]>([])`:
+Run: `cd boxing-gym-frontend && npm run build 2>&1 | head -50`
+Expected: Build succeeds (we haven't used computed yet)
 
+- [ ] **Step 3: Commit**
+
+```bash
+git add boxing-gym-frontend/src/views/member/index.vue
+git commit -m "feat(member): add computed to Vue imports
+
+Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
+```
+
+---
+
+## Task 2: Add New State Variables and Computed
+
+**Files:**
+- Modify: `boxing-gym-frontend/src/views/member/index.vue` (script section, after expand-related refs)
+
+- [ ] **Step 1: Add new state variables**
+
+Find the expand-related refs block (contains `memberCardsMap`, `cardsLoadingMap`, `expandedRowKeys`).
+
+Add after the `expandedRowKeys` ref:
 ```typescript
+
 // 卡片列表弹窗
 const cardListDialogVisible = ref(false)
 const currentMemberId = ref<number | null>(null)
@@ -50,12 +76,12 @@ const currentMemberCards = computed(() => {
 })
 ```
 
-- [ ] **Step 3: Verify no TypeScript errors**
+- [ ] **Step 2: Verify no TypeScript errors**
 
 Run: `cd boxing-gym-frontend && npm run build 2>&1 | head -50`
-Expected: Build should still succeed (we haven't used the new variables yet)
+Expected: Build succeeds
 
-- [ ] **Step 4: Commit**
+- [ ] **Step 3: Commit**
 
 ```bash
 git add boxing-gym-frontend/src/views/member/index.vue
@@ -66,16 +92,16 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 
 ---
 
-## Task 2: Add New Methods
+## Task 3: Add New Methods
 
 **Files:**
-- Modify: `boxing-gym-frontend/src/views/member/index.vue` (after line 271)
+- Modify: `boxing-gym-frontend/src/views/member/index.vue` (script section, after `loadMemberCards` function)
 
-- [ ] **Step 1: Add `openCardListDialog` method**
+- [ ] **Step 1: Add new methods**
 
-Add after `loadMemberCards` function (after line 271):
-
+Find the `loadMemberCards` function. Add after it:
 ```typescript
+
 /** 打开卡片列表弹窗 */
 const openCardListDialog = async (member: Member) => {
   currentMemberId.value = member.id!
@@ -127,33 +153,32 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 
 ---
 
-## Task 3: Replace Expand Column with Icon Button
+## Task 4: Replace Expand Column with Icon Button Column
 
 **Files:**
-- Modify: `boxing-gym-frontend/src/views/member/index.vue:370-378` (el-table)
-- Modify: `boxing-gym-frontend/src/views/member/index.vue:379-460` (expand column)
+- Modify: `boxing-gym-frontend/src/views/member/index.vue` (template section)
 
 - [ ] **Step 1: Remove expand-related props from el-table**
 
-In the `<el-table>` tag (lines 370-378), remove these two props:
+Find the main `<el-table>` component (the one containing `v-loading="loading"` and `:data="memberList"`).
+
+Remove these two props from it:
 - `:expand-row-keys="expandedRowKeys"`
 - `@expand-change="handleExpandChange"`
 
-The el-table should now look like:
+- [ ] **Step 2: Replace the expand column with icon button column**
+
+Find the `<el-table-column type="expand" ...>` block. It starts with:
 ```vue
-<el-table
-  v-loading="loading"
-  :data="memberList"
-  stripe
-  border
-  :row-key="(row) => row.id"
->
+<el-table-column type="expand" width="50">
 ```
+and ends with:
+```vue
+</el-table-column>
+```
+followed by `<el-table-column type="index" ...>`.
 
-- [ ] **Step 2: Replace expand column with icon button column**
-
-Replace the entire `<el-table-column type="expand" ...>` block (lines 379-460) with:
-
+Replace the entire expand column block with:
 ```vue
       <!-- 持卡列 -->
       <el-table-column label="持卡" width="60" align="center">
@@ -171,9 +196,8 @@ Replace the entire `<el-table-column type="expand" ...>` block (lines 379-460) w
 
 - [ ] **Step 3: Verify the page loads**
 
-Run: `cd boxing-gym-frontend && npm run dev &`
-Then visit http://localhost:3000 and navigate to member list page.
-Expected: Page loads, CreditCard icon appears in "持卡" column
+Run: `cd boxing-gym-frontend && npm run build 2>&1 | head -50`
+Expected: Build succeeds
 
 - [ ] **Step 4: Commit**
 
@@ -186,16 +210,18 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 
 ---
 
-## Task 4: Add Card List Dialog
+## Task 5: Add Card List Dialog Component
 
 **Files:**
-- Modify: `boxing-gym-frontend/src/views/member/index.vue` (after line 574, before drawer)
+- Modify: `boxing-gym-frontend/src/views/member/index.vue` (template section)
 
-- [ ] **Step 1: Add the card list dialog component**
+- [ ] **Step 1: Add the card list dialog**
 
-Add after the purchase card dialog (after `</el-dialog>` on line 574), before the drawer:
+Find the purchase card dialog (the one with `v-model="purchaseCardVisible"` and `title="购买会员卡"`).
 
+Add after its closing `</el-dialog>` tag:
 ```vue
+
     <!-- 卡片列表弹窗 -->
     <el-dialog
       v-model="cardListDialogVisible"
@@ -292,7 +318,7 @@ Add after the purchase card dialog (after `</el-dialog>` on line 574), before th
     </el-dialog>
 ```
 
-- [ ] **Step 2: Verify the dialog opens**
+- [ ] **Step 2: Verify build succeeds**
 
 Run: `cd boxing-gym-frontend && npm run build`
 Expected: Build succeeds
@@ -308,17 +334,14 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 
 ---
 
-## Task 5: Remove Unused Expand-Related Code
+## Task 6: Remove Unused Expand-Related Code
 
 **Files:**
-- Modify: `boxing-gym-frontend/src/views/member/index.vue:49-50` (refs)
-- Modify: `boxing-gym-frontend/src/views/member/index.vue:250-257` (method)
-- Modify: `boxing-gym-frontend/src/views/member/index.vue:259-271` (loadMemberCards)
-- Modify: `boxing-gym-frontend/src/views/member/index.vue:641-660` (styles)
+- Modify: `boxing-gym-frontend/src/views/member/index.vue` (script and style sections)
 
 - [ ] **Step 1: Remove unused refs**
 
-Remove these two lines (around line 49-50):
+In the script section, find and remove these two refs:
 ```typescript
 const cardsLoadingMap = ref<Map<number, boolean>>(new Map())
 const expandedRowKeys = ref<number[]>([])
@@ -326,7 +349,7 @@ const expandedRowKeys = ref<number[]>([])
 
 - [ ] **Step 2: Remove `handleExpandChange` method**
 
-Remove the entire function (around lines 250-257):
+Find and remove the entire `handleExpandChange` function:
 ```typescript
 /** 处理行展开 */
 const handleExpandChange = async (row: Member, expandedRows: Member[]) => {
@@ -340,8 +363,7 @@ const handleExpandChange = async (row: Member, expandedRows: Member[]) => {
 
 - [ ] **Step 3: Simplify `loadMemberCards` method**
 
-Update `loadMemberCards` to not use `cardsLoadingMap` (lines 259-271):
-
+Find the `loadMemberCards` function. Replace it with this simplified version:
 ```typescript
 /** 加载会员卡片 */
 const loadMemberCards = async (memberId: number) => {
@@ -355,9 +377,9 @@ const loadMemberCards = async (memberId: number) => {
 }
 ```
 
-- [ ] **Step 4: Remove unused styles**
+- [ ] **Step 4: Remove unused CSS classes**
 
-Remove these CSS classes that are no longer needed (lines 641-660):
+In the `<style scoped>` section, find and remove these CSS classes:
 ```css
 .expand-content {
   padding: 12px 20px;
@@ -381,9 +403,9 @@ Remove these CSS classes that are no longer needed (lines 641-660):
 }
 ```
 
-Keep `.no-cards` (lines 662-667) and `.no-records` (lines 669-674) styles.
+Keep `.no-cards` and `.no-records` styles.
 
-- [ ] **Step 5: Verify build and test**
+- [ ] **Step 5: Verify build succeeds**
 
 Run: `cd boxing-gym-frontend && npm run build`
 Expected: Build succeeds with no errors
@@ -399,7 +421,7 @@ Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 
 ---
 
-## Task 6: Manual Verification
+## Task 7: Manual Verification
 
 **Files:**
 - Test: `boxing-gym-frontend/src/views/member/index.vue`
@@ -437,8 +459,6 @@ Convert nested expandable table to dialog-based card list with:
 - Purchase Card button inside dialog
 - All existing card actions preserved
 - Empty state handling
-
-Closes: member card list dialog feature
 
 Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 ```
