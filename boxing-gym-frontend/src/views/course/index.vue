@@ -195,6 +195,16 @@ const handlePageChange = (page: number, pageSize: number) => {
 
     <!-- 数据表格 -->
     <el-table v-loading="loading" :data="courseList" stripe border>
+      <el-table-column prop="status" label="状态" width="100" fixed="left">
+        <template #default="{ row }">
+          <el-switch
+            v-model="row.status"
+            :active-value="'0'"
+            :inactive-value="'1'"
+            @change="handleStatusChange(row)"
+          />
+        </template>
+      </el-table-column>
       <el-table-column type="index" label="序号" width="60" align="center" />
       <el-table-column prop="courseName" label="课程名称" min-width="150" />
       <el-table-column prop="courseType" label="课程类型" width="100">
@@ -224,13 +234,6 @@ const handlePageChange = (page: number, pageSize: number) => {
         </template>
       </el-table-column>
       <el-table-column prop="coachName" label="教练" width="120" />
-      <el-table-column prop="status" label="状态" width="80">
-        <template #default="{ row }">
-          <el-tag :type="row.status === '0' ? 'success' : 'danger'">
-            {{ getDictLabel(COURSE_STATUS, row.status) }}
-          </el-tag>
-        </template>
-      </el-table-column>
       <el-table-column label="操作" width="180" fixed="right">
         <template #default="{ row }">
           <el-button type="primary" link :icon="Edit" @click="handleEdit(row)">编辑</el-button>

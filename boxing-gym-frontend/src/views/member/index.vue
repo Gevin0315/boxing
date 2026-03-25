@@ -429,6 +429,16 @@ const formatDate = (date: string | undefined) => {
       border
       :row-key="(row) => row.id"
     >
+      <el-table-column prop="status" label="状态" width="100" fixed="left">
+        <template #default="{ row }">
+          <el-switch
+            v-model="row.status"
+            :active-value="'1'"
+            :inactive-value="'0'"
+            @change="handleStatusChange(row)"
+          />
+        </template>
+      </el-table-column>
       <!-- 持卡列 -->
       <el-table-column label="持卡" width="60" align="center">
         <template #default="{ row }">
@@ -452,13 +462,6 @@ const formatDate = (date: string | undefined) => {
       <el-table-column prop="remainingBalance" label="余额" width="120">
         <template #default="{ row }">
           {{ formatCurrency(row.remainingBalance || 0) }}
-        </template>
-      </el-table-column>
-      <el-table-column prop="status" label="状态" width="100">
-        <template #default="{ row }">
-          <el-tag :type="row.status === '0' ? 'success' : row.status === '1' ? 'warning' : 'info'">
-            {{ getDictLabel(MEMBER_STATUS, row.status) }}
-          </el-tag>
         </template>
       </el-table-column>
       <el-table-column prop="createTime" label="创建时间" width="180" />
