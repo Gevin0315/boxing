@@ -282,6 +282,40 @@ const loadMemberCards = async (memberId: number) => {
   }
 }
 
+/** 打开卡片列表弹窗 */
+const openCardListDialog = async (member: Member) => {
+  currentMemberId.value = member.id!
+  currentMemberName.value = member.name
+  cardListDialogVisible.value = true
+  cardListLoading.value = true
+  await loadMemberCards(member.id!)
+  cardListLoading.value = false
+}
+
+/** 卡片列表弹窗关闭处理 */
+const handleCardListDialogClose = () => {
+  cardListLoading.value = false
+}
+
+/** 从弹窗内打开购卡 */
+const openPurchaseCardFromDialog = async () => {
+  purchaseCardForm.memberId = currentMemberId.value!
+  purchaseCardForm.cardId = undefined
+  purchaseCardForm.payMethod = 3
+  purchaseCardForm.paidAmount = 0
+  purchaseCardForm.remark = ''
+  cardsLoading.value = true
+  try {
+    availableCards.value = await getAvailableCards()
+  } catch (error) {
+    console.error('Failed to load available cards:', error)
+    availableCards.value = []
+  } finally {
+    cardsLoading.value = false
+  }
+  purchaseCardVisible.value = true
+}
+
 /** 格式化日期 */
 const formatDate = (date: string | undefined) => {
   if (!date) return '-'
