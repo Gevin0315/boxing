@@ -297,10 +297,21 @@ public class MemberController {
 
     /**
      * 修改会员状态
+     * <p>
+     * 如果会员有有效卡（生效中或未激活），则禁止停用。
+     * </p>
      */
     @Operation(summary = "修改会员状态")
     @PutMapping("/status")
     public Result<String> updateStatus(@RequestParam Long id, @RequestParam Integer status) {
+        Member member = memberService.getById(id);
+        if (member == null) {
+            return Result.notFound("会员不存在");
+        }
+        // 停用时检查是否有有效卡
+        if (status == 0 && memberCardService.hasActiveCard(id)) {
+            return Result.fail("该会员有有效卡，无法停用。请先作废或等待卡片过期后再停用。");
+        }
         boolean success = memberService.lambdaUpdate()
                 .eq(Member::getId, id)
                 .set(Member::getStatus, status)
