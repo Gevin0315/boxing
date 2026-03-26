@@ -43,7 +43,12 @@
       "Bash(git diff:*)",
       "Bash(git -C /Users/gevinlee/code/boxing commit -m \"$\\(cat <<''EOF''\nfeat\\(frontend\\): add types and APIs for payment flow\n\n- Add PurchaseCardResult, PaymentResult, PendingOrder types\n- Add confirmPayment, cancelOrder, getPendingOrders APIs\n- Update purchaseCard return type\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
       "Bash(npx run lint:*)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(npx skills find debug)",
+      "Bash(xargs:*)",
+      "Bash(cat:*)",
+      "Bash(npm run lint:*)",
+      "Bash(git log:*)"
     ]
   }
 }

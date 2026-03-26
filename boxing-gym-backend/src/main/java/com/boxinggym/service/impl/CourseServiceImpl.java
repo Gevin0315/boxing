@@ -7,11 +7,14 @@ import com.boxinggym.dto.CourseQueryDTO;
 import com.boxinggym.entity.Course;
 import com.boxinggym.entity.SysUser;
 import com.boxinggym.mapper.CourseMapper;
+import com.boxinggym.service.CourseScheduleService;
 import com.boxinggym.service.CourseService;
 import com.boxinggym.service.SysUserService;
 import com.boxinggym.vo.CourseVO;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -21,11 +24,13 @@ import java.util.stream.Collectors;
 /**
  * 课程 Service 实现
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> implements CourseService {
 
     private final SysUserService sysUserService;
+    private final CourseScheduleService courseScheduleService;
 
     @Override
     public Page<CourseVO> page(CourseQueryDTO query) {
@@ -109,5 +114,77 @@ public class CourseServiceImpl extends ServiceImpl<CourseMapper, Course> impleme
         vo.setCreateTime(course.getCreateTime());
         vo.setUpdateTime(course.getUpdateTime());
         return vo;
+    }
+
+    /**
+     * 删除课程
+     * <p>
+     * 删除课程时会级联取消所有未结束的排课记录。
+     * 使用事务确保数据一致性，删除失败时自动回滚。
+     * </p>
+     *
+     * @param id 课程ID
+     */
+    @Override
+    @Transactional(rollbackFor = RuntimeException.class)
+    public void deleteById(Long id) {
+        Course course = getById(id);
+        if (course != null) {
+            // 取消所有未结束的排课
+            courseScheduleService.cancelUnfinishedSchedules(id);
+            log.info("删除课程[{}]并取消关联排课", course.getName());
+        }
+        removeById(id);
+    }
+
+    /**
+     * 批量删除课程
+     * <p>
+     * 批量删除课程时会级联取消每个课程下所有未结束的排课记录。
+     * 使用事务确保数据一致性，任一删除失败时自动回滚。
+     * </p>
+     *
+     * @param ids 课程ID列表
+     */
+    @Override
+    @Transactional(rollbackFor = RuntimeException.class)
+    public void deleteByIds(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return;
+        }
+        log.info("批量删除{}个课程", ids.size());
+        for (Long id : ids) {
+            deleteById(id);
+        }
+    }
+
+    /**
+     * 更新课程状态
+     * <p>
+     * 当课程状态更新为禁用时，会自动取消该课程下所有未开始的排课记录。
+     * 使用事务确保数据一致性，更新失败时自动回滚。
+     * </p>
+     *
+     * @param id     课程ID
+     * @param status 状态（0-禁用，1-启用）
+     * @throws IllegalArgumentException 当课程不存在时抛出
+     */
+    @Override
+    @Transactional(rollbackFor = RuntimeException.class)
+    public boolean updateStatus(Long id, Integer status) {
+        Course course = getById(id);
+        if (course == null) {
+            return false;
+        }
+        course.setStatus(status);
+        updateById(course);
+
+        // 当禁用课程时，取消所有未开始的排课
+        if (status == 0) {
+            courseScheduleService.cancelNotStartedSchedules(id, "课程已禁用");
+            log.info("禁用课程[{}]并取消未开始的排课", course.getName());
+        }
+        log.info("更新课程[{}]状态为: {}", course.getName(), status == 1 ? "启用" : "禁用");
+        return true;
     }
 }
