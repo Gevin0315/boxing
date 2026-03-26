@@ -25,7 +25,10 @@ const toTime = (value?: string) => (value ? value.slice(11, 16) : '')
 const mapSchedule = (item: any): CourseSchedule => ({
   id: item.id,
   courseId: item.courseId,
+  courseName: item.courseName || '',
+  courseType: item.courseType,
   coachId: item.coachId,
+  coachName: item.coachName || '',
   scheduleDate: toIsoDate(item.startTime),
   startTime: toTime(item.startTime),
   endTime: toTime(item.endTime),

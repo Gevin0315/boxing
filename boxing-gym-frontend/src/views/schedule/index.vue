@@ -63,15 +63,16 @@ const getList = async () => {
     const coachMap = new Map(coachOptions.value.map(item => [item.value, item.label]))
 
     // 后端 type: 1-团课, 2-私教课 -> 前端: 'group', 'private'
-    const toFrontendType = (type?: number) => (type === 2 ? 'private' : 'group')
+    const toFrontendType = (type?: number) => (type === 2 ? '私教课' : '团课')
 
     scheduleList.value = (res.rows || []).map(item => {
       const course = courseMap.get(item.courseId)
       return {
         ...item,
-        courseName: course?.label || '',
-        courseType: toFrontendType(course?.type),
-        coachName: coachMap.get(item.coachId) || ''
+        // 优先使用后端返回的数据（支持已删除课程显示名称）
+        courseName: item.courseName || course?.label || '',
+        courseType: item.courseType !== undefined ? toFrontendType(item.courseType) : toFrontendType(course?.type),
+        coachName: item.coachName || coachMap.get(item.coachId) || ''
       }
     })
     total.value = res.total || 0
