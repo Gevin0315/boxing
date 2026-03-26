@@ -160,16 +160,17 @@ public class CourseScheduleServiceImpl extends ServiceImpl<CourseScheduleMapper,
             throw new IllegalArgumentException("课程ID不能为空");
         }
 
-        LambdaUpdateWrapper<CourseSchedule> wrapper = new LambdaUpdateWrapper<>();
-        wrapper.eq(CourseSchedule::getCourseId, courseId)
-               .in(CourseSchedule::getStatus,
-                   ScheduleStatusEnum.NOT_STARTED.getCode(),
-                   ScheduleStatusEnum.IN_PROGRESS.getCode())
-               .set(CourseSchedule::getStatus, ScheduleStatusEnum.CANCELLED.getCode())
-               .set(CourseSchedule::getRemark, "课程已删除");
+        // LambdaUpdateWrapper<CourseSchedule> wrapper = new LambdaUpdateWrapper<>();
+        // wrapper.eq(CourseSchedule::getCourseId, courseId)
+        //        .in(CourseSchedule::getStatus,
+        //            ScheduleStatusEnum.NOT_STARTED.getCode(),
+        //            ScheduleStatusEnum.IN_PROGRESS.getCode())
+        //        .set(CourseSchedule::getStatus, ScheduleStatusEnum.CANCELLED.getCode())
+        //        .set(CourseSchedule::getRemark, "课程已删除");
 
-        int updated = courseScheduleMapper.update(null, wrapper);
-        log.info("取消课程[{}]的未结束排课，共{}条", courseId, updated);
+        // int updated = courseScheduleMapper.update(null, wrapper);
+        courseScheduleMapper.delete(new LambdaQueryWrapper<CourseSchedule>().eq(CourseSchedule::getCourseId, courseId));
+        log.info("取消课程[{}]的未结束排课", courseId);
     }
 
     /**
