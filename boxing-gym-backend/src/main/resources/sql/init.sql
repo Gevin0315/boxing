@@ -92,7 +92,6 @@ CREATE TABLE `member` (
     `update_by` BIGINT COMMENT '更新人ID',
     `deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除: 0-未删除, 1-已删除',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_phone` (`phone`),
     KEY `idx_card_expire_date` (`card_expire_date`),
     KEY `idx_membership_level` (`membership_level`),
     KEY `idx_status` (`status`)

@@ -374,9 +374,24 @@ public class MemberCardServiceImpl extends ServiceImpl<MemberCardMapper, MemberC
         LocalDate today = LocalDate.now();
         LambdaQueryWrapper<MemberCard> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(MemberCard::getMemberId, memberId)
-                .eq(MemberCard::getStatus, CardStatusEnum.ACTIVE.getCode())
-                .ge(MemberCard::getExpireDate, today);
+                .in(MemberCard::getStatus, List.of(CardStatusEnum.ACTIVE.getCode(), CardStatusEnum.INACTIVE.getCode()));
         return count(wrapper) > 0;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public int deleteInactiveCards(Long memberId) {
+        LambdaQueryWrapper<MemberCard> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(MemberCard::getMemberId, memberId)
+                .in(MemberCard::getStatus,
+                        CardStatusEnum.EXPIRED.getCode(),
+                        CardStatusEnum.VOIDED.getCode());
+        long count = count(wrapper);
+        if (count > 0) {
+            remove(wrapper);
+            log.info("删除会员[{}]的无效卡，共{}张", memberId, count);
+        }
+        return (int) count;
     }
 
     @Override

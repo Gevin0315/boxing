@@ -143,4 +143,12 @@ public interface MemberCardService {
      * @return 是否有有效卡
      */
     boolean hasActiveCard(Long memberId);
+
+    /**
+     * 删除会员的所有无效卡（已过期、已作废）
+     *
+     * @param memberId 会员ID
+     * @return 删除的卡数量
+     */
+    int deleteInactiveCards(Long memberId);
 }

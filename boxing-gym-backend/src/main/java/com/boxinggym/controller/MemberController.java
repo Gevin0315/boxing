@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -28,6 +29,7 @@ import java.util.stream.Collectors;
 /**
  * 会员 Controller
  */
+@Slf4j
 @Tag(name = "会员管理", description = "会员相关接口")
 @RestController
 @RequestMapping("/api/member")
@@ -151,29 +153,76 @@ public class MemberController {
 
     /**
      * 删除会员
+     * <p>
+     * 如果会员有有效卡（生效中或未激活），则禁止删除。
+     * 删除时会级联删除会员的所有无效卡（已过期、已作废）。
+     * </p>
      */
     @Operation(summary = "删除会员")
     @DeleteMapping("/{id}")
+    @Transactional(rollbackFor = Exception.class)
     public Result<String> delete(@PathVariable Long id) {
         Member member = memberService.getById(id);
         if (member == null) {
             return Result.notFound("会员不存在");
         }
+        // 检查是否有有效卡
+        if (memberCardService.hasActiveCard(id)) {
+            return Result.fail("该会员有有效卡，无法删除。请先作废或等待卡片过期后再删除。");
+        }
+        // 删除会员的所有无效卡
+        int deletedCards = memberCardService.deleteInactiveCards(id);
+        // 删除会员
         boolean success = memberService.removeById(id);
-        return success ? Result.success("删除成功") : Result.fail("删除失败");
+        if (success) {
+            log.info("删除会员[{}]成功，级联删除{}张无效卡", member.getName(), deletedCards);
+            return Result.success("删除成功");
+        }
+        return Result.fail("删除失败");
     }
 
     /**
      * 批量删除会员
+     * <p>
+     * 批量删除时会跳过有有效卡的会员，只删除没有有效卡的会员。
+     * 删除时会级联删除会员的所有无效卡。
+     * </p>
      */
     @Operation(summary = "批量删除会员")
     @DeleteMapping
+    @Transactional(rollbackFor = Exception.class)
     public Result<String> batchDelete(@Valid @RequestBody BatchDeleteDTO dto) {
         if (dto.getIds() == null || dto.getIds().isEmpty()) {
             return Result.fail("ID列表不能为空");
         }
-        boolean success = memberService.removeByIds(dto.getIds());
-        return success ? Result.success("批量删除成功") : Result.fail("批量删除失败");
+        int successCount = 0;
+        int skipCount = 0;
+        StringBuilder skipMembers = new StringBuilder();
+
+        for (Long id : dto.getIds()) {
+            Member member = memberService.getById(id);
+            if (member == null) {
+                continue;
+            }
+            // 检查是否有有效卡
+            if (memberCardService.hasActiveCard(id)) {
+                skipCount++;
+                skipMembers.append(member.getName()).append("、");
+                continue;
+            }
+            // 删除无效卡
+            memberCardService.deleteInactiveCards(id);
+            // 删除会员
+            if (memberService.removeById(id)) {
+                successCount++;
+            }
+        }
+
+        if (skipCount > 0) {
+            String names = skipMembers.substring(0, skipMembers.length() - 1);
+            return Result.success(String.format("成功删除%d个会员，跳过%d个有有效卡的会员（%s）", successCount, skipCount, names));
+        }
+        return Result.success("批量删除成功，共删除" + successCount + "个会员");
     }
 
     /**
