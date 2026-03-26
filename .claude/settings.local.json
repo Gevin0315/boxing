@@ -48,7 +48,8 @@
       "Bash(xargs:*)",
       "Bash(cat:*)",
       "Bash(npm run lint:*)",
-      "Bash(git log:*)"
+      "Bash(git log:*)",
+      "Bash(git -no-pager diff)"
     ]
   }
 }

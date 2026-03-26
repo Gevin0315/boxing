@@ -6,7 +6,6 @@ import com.boxinggym.entity.Course;
 import com.boxinggym.entity.CourseSchedule;
 import com.boxinggym.entity.FinanceOrder;
 import com.boxinggym.entity.Member;
-import com.boxinggym.entity.SysCoachProfile;
 import com.boxinggym.entity.SysUser;
 import com.boxinggym.entity.TrainingRecord;
 import com.boxinggym.service.MemberService;

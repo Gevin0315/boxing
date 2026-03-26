@@ -19,7 +19,6 @@ import com.boxinggym.service.CourseService;
 import com.boxinggym.service.TrainingRecordService;
 import com.boxinggym.service.MemberService;
 import com.boxinggym.service.SysUserService;
-import com.boxinggym.utils.ResponseAssembler;
 import com.boxinggym.vo.TrainingRecordVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

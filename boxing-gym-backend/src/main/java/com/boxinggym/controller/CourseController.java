@@ -101,8 +101,8 @@ public class CourseController {
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_RECEPTION')")
     public Result<String> delete(@PathVariable Long id) {
-        boolean success = courseService.removeById(id);
-        return success ? Result.success("删除成功") : Result.fail("删除失败");
+        courseService.deleteById(id);
+        return Result.success("删除成功");
     }
 
     /**
@@ -115,8 +115,8 @@ public class CourseController {
         if (dto.getIds() == null || dto.getIds().isEmpty()) {
             return Result.fail("ID列表不能为空");
         }
-        boolean success = courseService.removeByIds(dto.getIds());
-        return success ? Result.success("批量删除成功") : Result.fail("批量删除失败");
+        courseService.deleteByIds(dto.getIds());
+        return Result.success("批量删除成功");
     }
 
     /**
@@ -126,10 +126,11 @@ public class CourseController {
     @PutMapping("/status")
     @PreAuthorize("hasAnyAuthority('ROLE_ADMIN','ROLE_RECEPTION')")
     public Result<String> updateStatus(@RequestParam Long id, @RequestParam Integer status) {
-        boolean success = courseService.lambdaUpdate()
-                .eq(com.boxinggym.entity.Course::getId, id)
-                .set(com.boxinggym.entity.Course::getStatus, status)
-                .update();
+        // boolean success = courseService.lambdaUpdate()
+        //         .eq(com.boxinggym.entity.Course::getId, id)
+        //         .set(com.boxinggym.entity.Course::getStatus, status)
+        //         .update();
+        boolean success = courseService.updateStatus(id, status);
         return success ? Result.success("状态修改成功") : Result.fail("状态修改失败");
     }
 

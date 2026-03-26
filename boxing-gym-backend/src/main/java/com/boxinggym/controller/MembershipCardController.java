@@ -5,7 +5,6 @@ import com.boxinggym.common.Result;
 import com.boxinggym.dto.MembershipCardDTO;
 import com.boxinggym.dto.MembershipCardVO;
 import com.boxinggym.entity.MembershipCard;
-import com.boxinggym.enums.CardSaleStatusEnum;
 import com.boxinggym.service.MembershipCardService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

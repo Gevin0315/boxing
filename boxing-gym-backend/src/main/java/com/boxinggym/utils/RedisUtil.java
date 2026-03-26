@@ -296,7 +296,7 @@ public class RedisUtil {
      * 获取 ZSet 中指定范围的元素（按分数降序）
      */
     public Set<Object> zReverseRange(String key, long start, long end) {
-        return redisTemplate.opsForZSet().reverseRange(key, start, end);
+        return redisTemplate.opsForZSet().reverseRange(key == null ? "" : key, start, end);
     }
 
     /**

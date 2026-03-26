@@ -110,9 +110,10 @@ export const CHECKIN_STATUS = [
 
 /** 排课状态 */
 export const SCHEDULE_STATUS = [
-  { value: '0', label: '正常' },
-  { value: '1', label: '已取消' },
-  { value: '2', label: '已完成' }
+  { value: '0', label: '未开始' },
+  { value: '1', label: '进行中' },
+  { value: '2', label: '已结束' },
+  { value: '3', label: '已取消' }
 ]
 
 /** 周期类型 */

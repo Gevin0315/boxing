@@ -245,7 +245,7 @@ const handlePageChange = (page: number, pageSize: number) => {
       <el-table-column prop="currentCount" label="已报名" width="80" align="center" />
       <el-table-column prop="status" label="状态" width="80">
         <template #default="{ row }">
-          <el-tag :type="row.status === '0' ? 'success' : row.status === '1' ? 'warning' : 'info'">
+          <el-tag :type="row.status === '0' ? 'info' : row.status === '1' ? 'success' : row.status === '2' ? '' : 'danger'">
             {{ getDictLabel(SCHEDULE_STATUS, row.status) }}
           </el-tag>
         </template>
